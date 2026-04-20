@@ -1,85 +1,74 @@
-* { box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
-
-body {
-  background-color: #121212;
-  color: #ffffff;
-  display: flex;
-  justify-content: center;
-  padding: 20px;
-  margin: 0;
+:root {
+  --bg-dark: #121212;
+  --panel-bg: #1e1e1e;
+  --text-main: #ffffff;
+  --text-muted: #aaaaaa;
+  --primary: #ff8c00;
+  --glow-red: rgba(255, 69, 0, 0.4);
+  --glow-yellow: rgba(255, 215, 0, 0.4);
 }
 
-.workout-container {
-  width: 100%;
-  max-width: 600px;
-  padding: 30px;
-  background-color: #1e1e1e;
-  border-radius: 15px;
-  position: relative;
-  transition: all 0.5s ease;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+* { box-sizing: border-box; font-family: 'Pretendard', sans-serif; margin: 0; padding: 0; }
+
+body { background-color: var(--bg-dark); color: var(--text-main); line-height: 1.6; }
+
+.app-container { max-width: 600px; margin: 0 auto; padding: 20px; }
+
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 15px; }
+header h1 { color: var(--primary); cursor: pointer; font-size: 1.5rem; }
+nav button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-weight: bold; margin-left: 10px; }
+nav button:hover { color: var(--text-main); }
+
+.view-section { display: none; animation: fadeIn 0.3s ease-in-out; }
+.view-section.active { display: block; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 카테고리 그리드 (비율 안 깨짐) */
+.category-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.cat-btn {
+  flex: 1 1 calc(33.333% - 10px);
+  background-color: #2a2a2a; padding: 15px 0; text-align: center;
+  border-radius: 10px; cursor: pointer; font-weight: bold; border: 2px solid transparent;
+  transition: all 0.2s; user-select: none;
+}
+.cat-btn.selected { border-color: var(--primary); background-color: rgba(255, 140, 0, 0.1); color: var(--primary); }
+
+/* 입력 폼 */
+.input-group { display: flex; flex-direction: column; margin-bottom: 15px; width: 100%; }
+.input-row { display: flex; gap: 10px; }
+label { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 5px; }
+input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; font-size: 1rem; width: 100%; outline: none; }
+input:focus { border-color: var(--primary); }
+
+/* 버튼 */
+.primary-btn, .secondary-btn { width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; border: none; transition: 0.3s; }
+.primary-btn { background-color: var(--primary); color: white; }
+.primary-btn:hover { background-color: #e07b00; }
+.secondary-btn { background-color: #333; color: white; }
+.secondary-btn:hover { background-color: #444; }
+.mt-10 { margin-top: 10px; } .mt-20 { margin-top: 20px; } .mb-20 { margin-bottom: 20px; }
+
+/* 리스트 & 명예의 전당 카드 */
+.list-container { display: flex; flex-direction: column; gap: 12px; }
+.record-card {
+  background: var(--panel-bg); padding: 15px; border-radius: 10px;
+  border: 1px solid #333; cursor: pointer; transition: all 0.3s;
+}
+.record-card:hover { transform: translateY(-2px); border-color: #555; }
+.record-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; }
+.record-details { color: var(--text-muted); font-size: 0.9rem; }
+.volume-badge { background: #333; color: var(--primary); padding: 3px 8px; border-radius: 5px; font-weight: bold; float: right; }
+
+/* 🔴 최고 볼륨 하이라이트 (은은한 빨간색 글로우) */
+.highlight-red {
+  border: 1px solid rgba(255, 69, 0, 0.6);
+  box-shadow: 0 0 15px var(--glow-red), inset 0 0 10px rgba(255, 69, 0, 0.1);
+}
+/* 🟡 최고 무게 하이라이트 (은은한 노란색 글로우) */
+.highlight-yellow {
+  border: 1px solid rgba(255, 215, 0, 0.6);
+  box-shadow: 0 0 15px var(--glow-yellow), inset 0 0 10px rgba(255, 215, 0, 0.1);
 }
 
-h1, h2 { color: #ff8c00; }
-
-textarea {
-  width: 100%;
-  height: 120px;
-  background-color: #2a2a2a;
-  border: 1px solid #444;
-  color: white;
-  padding: 15px;
-  border-radius: 10px;
-  font-size: 16px;
-  resize: none;
-  margin-bottom: 15px;
-}
-
-button {
-  width: 100%;
-  padding: 15px;
-  background-color: #ff8c00;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-button:hover { background-color: #e07b00; }
-
-.history-section { margin-top: 40px; border-top: 1px solid #444; padding-top: 20px; }
-.record-card { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
-.highlight-text { font-size: 1.2rem; font-weight: bold; color: #ffeb3b; margin-bottom: 15px; }
-
-/* 🔥 PR 달성 시 은은하고 세련된 오렌지/화이트 글로우 효과 */
-@keyframes elegantGlow {
-  0% { box-shadow: 0 0 10px rgba(255, 140, 0, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 140, 0, 0.5); }
-  50% { box-shadow: 0 0 25px rgba(255, 120, 0, 0.8), inset 0 0 15px rgba(255, 255, 255, 0.6); border: 1px solid rgba(255, 165, 0, 1); }
-  100% { box-shadow: 0 0 10px rgba(255, 140, 0, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 140, 0, 0.5); }
-}
-
-.pr-achieved { animation: elegantGlow 4s ease-in-out infinite; }
-
-/* 불꽃 PR 알림 UI */
-.pr-notification {
-  display: none;
-  position: fixed;
-  top: -100px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #ff8c00, #ff4500);
-  padding: 15px 25px;
-  border-radius: 20px;
-  font-weight: bold;
-  font-size: 1.1rem;
-  color: white;
-  box-shadow: 0 4px 15px rgba(255, 69, 0, 0.5);
-  z-index: 1000;
-  transition: top 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-  text-align: center;
-}
-
-.pr-notification.show { display: block; top: 20px; }
+.history-legend { font-size: 0.85rem; margin-bottom: 15px; display: flex; gap: 15px; }
