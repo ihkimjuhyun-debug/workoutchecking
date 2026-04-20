@@ -55,8 +55,15 @@
     </div>
 
     <div id="hof-view" class="view-section">
-      <h2 class="mb-20">🏆 명예의 전당 <span style="font-size: 0.9rem; color: #888;">(세션 총 볼륨)</span></h2>
-      <div id="hof-list" class="list-container"></div>
+      <h2 class="mb-20">🏆 명예의 전당</h2>
+      
+      <div class="hof-tabs mb-20">
+        <button class="hof-tab active" onclick="switchHofTab('volume')">🔴 역대 볼륨 순위</button>
+        <button class="hof-tab" onclick="switchHofTab('weight')">🟡 최고 무게 PR</button>
+      </div>
+
+      <div id="hof-volume-list" class="list-container"></div>
+      <div id="hof-weight-list" class="list-container" style="display: none;"></div>
     </div>
 
     <div id="search-view" class="view-section">
