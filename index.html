@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>최강의 운동 볼륨 트래커</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="pr-alert" class="pr-notification"></div>
+
+  <div class="workout-container" id="workout-view">
+    <h1>💪 오늘의 운동 기록</h1>
+    <p>자유롭게 적어주세요. AI가 자동으로 분석하여 볼륨과 PR을 계산합니다.</p>
+    
+    <textarea id="workout-input" placeholder="예: 사이드 레터럴 레이즈 10키로 30회 3세트&#10;숄더 프레스 50키로 30개 3세트"></textarea>
+    
+    <button id="analyze-btn">분석 및 기록하기</button>
+    <div id="loading" style="display: none;">AI 분석 중... 🧠</div>
+
+    <div id="result-area" style="display: none;">
+      <h2>📊 오늘 세션 분석 결과</h2>
+      <div id="session-total" class="highlight-text"></div>
+      <div id="parsed-list"></div>
+    </div>
+
+    <div class="history-section">
+      <h2>📚 나의 역대 최고 기록 (PR)</h2>
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
