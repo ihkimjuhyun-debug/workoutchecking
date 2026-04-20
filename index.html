@@ -1,103 +1,53 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ultimate Workout Tracker</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-  <div class="app-container">
-    <header>
-      <h1 onclick="showView('home-view')">🔥 PR Tracker</h1>
-      <nav>
-        <button onclick="showView('home-view')">운동 시작</button>
-        <button onclick="showView('search-view')">기록 검색</button>
-        <button onclick="showView('hof-view')">명예의 전당</button>
-      </nav>
-    </header>
-
-    <div id="home-view" class="view-section active">
-      <h2>오늘의 운동 부위 선택 (복수 가능)</h2>
-      <div class="category-grid" id="category-selection">
-        <div class="cat-btn" data-cat="어깨">어깨</div>
-        <div class="cat-btn" data-cat="등">등</div>
-        <div class="cat-btn" data-cat="가슴">가슴</div>
-        <div class="cat-btn" data-cat="하체">하체</div>
-        <div class="cat-btn" data-cat="팔">팔</div>
-        <div class="cat-btn" data-cat="복근">복근</div>
-      </div>
-      <button class="primary-btn mt-20" onclick="startWorkout()">운동 일지 기록 시작하기</button>
-    </div>
-
-    <div id="record-view" class="view-section">
+<div id="record-view" class="view-section">
       <h2 id="current-categories-title">운동 기록</h2>
       
-      <div class="input-group">
-        <label>운동 종목</label>
-        <input type="text" id="input-name" placeholder="예: OHP, 벤치프레스">
+      <div id="exercise-inputs-container">
+        <div class="exercise-entry record-card mb-20" style="position:relative;">
+          <div class="input-group mt-10">
+            <label>운동 종목</label>
+            <input type="text" class="input-name" placeholder="예: OHP, 벤치프레스">
+          </div>
+          <div class="input-row">
+            <div class="input-group">
+              <label>무게 (kg)</label>
+              <input type="number" class="input-weight" placeholder="0">
+            </div>
+            <div class="input-group">
+              <label>횟수 (회)</label>
+              <input type="number" class="input-reps" placeholder="0">
+            </div>
+            <div class="input-group">
+              <label>세트 (세트)</label>
+              <input type="number" class="input-sets" placeholder="0">
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="input-row">
-        <div class="input-group">
-          <label>무게 (kg)</label>
-          <input type="number" id="input-weight" placeholder="0">
-        </div>
-        <div class="input-group">
-          <label>횟수 (회)</label>
-          <input type="number" id="input-reps" placeholder="0">
-        </div>
-        <div class="input-group">
-          <label>세트 (세트)</label>
-          <input type="number" id="input-sets" placeholder="0">
-        </div>
-      </div>
+
+      <button class="secondary-btn mb-20" onclick="addExerciseInput()">➕ 다른 종목 추가하기</button>
 
       <div class="action-buttons">
         <button class="primary-btn" onclick="saveRecord('now')">지금 운동 기록하기 (현재 시간)</button>
-        <button class="secondary-btn" onclick="togglePastDateInput()">운동 후 과거 일지 기록하기</button>
+        <button class="secondary-btn mt-10" onclick="togglePastDateInput()">운동 후 과거 일지 기록하기</button>
       </div>
 
       <div id="past-date-container" style="display: none; margin-top: 15px;">
-        <input type="datetime-local" id="input-past-date">
-        <button class="primary-btn mt-10" onclick="saveRecord('past')">과거 기록 저장</button>
+        <input type="datetime-local" id="input-past-date" step="1"> <button class="primary-btn mt-10" onclick="saveRecord('past')">과거 기록 저장</button>
       </div>
     </div>
 
-    <div id="hof-view" class="view-section">
-      <h2>🏆 명예의 전당 (날짜별 총 볼륨)</h2>
-      <div id="hof-list" class="list-container"></div>
-    </div>
-
     <div id="search-view" class="view-section">
-      <h2>🔍 종목 검색 및 카테고리</h2>
+      <h2 style="margin-bottom: 20px;">🔍 종목 검색 및 카테고리</h2>
       <input type="text" id="search-input" placeholder="종목 이름 검색 (예: OHP)" onkeyup="searchExercises()">
       
       <div class="category-grid mt-20" id="filter-categories">
-        <div class="cat-btn" onclick="filterByCategory('어깨')">어깨</div>
-        <div class="cat-btn" onclick="filterByCategory('등')">등</div>
-        <div class="cat-btn" onclick="filterByCategory('가슴')">가슴</div>
-        <div class="cat-btn" onclick="filterByCategory('하체')">하체</div>
-        <div class="cat-btn" onclick="filterByCategory('팔')">팔</div>
-        <div class="cat-btn" onclick="filterByCategory('복근')">복근</div>
+        <div class="cat-btn" onclick="filterByCategory('어깨', this)">어깨</div>
+        <div class="cat-btn" onclick="filterByCategory('등', this)">등</div>
+        <div class="cat-btn" onclick="filterByCategory('가슴', this)">가슴</div>
+        <div class="cat-btn" onclick="filterByCategory('하체', this)">하체</div>
+        <div class="cat-btn" onclick="filterByCategory('팔', this)">팔</div>
+        <div class="cat-btn" onclick="filterByCategory('복근', this)">복근</div>
       </div>
 
       <div id="exercise-list" class="list-container mt-20"></div>
     </div>
-
-    <div id="history-view" class="view-section">
-      <button class="secondary-btn mb-20" onclick="showView('search-view')">⬅ 뒤로 가기</button>
-      <h2 id="history-title">종목 기록</h2>
-      <div class="history-legend">
-        <span class="legend-red">🔴 최고 볼륨</span>
-        <span class="legend-yellow">🟡 최고 무게</span>
-      </div>
-      <div id="history-list" class="list-container"></div>
-      <button class="primary-btn mt-20" onclick="goToRecordFromHistory()">이 종목 바로 기록하기</button>
-    </div>
-
-  </div>
-
-  <script src="app.js"></script>
-</body>
-</html>
