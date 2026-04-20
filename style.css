@@ -1,0 +1,85 @@
+* { box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
+
+body {
+  background-color: #121212;
+  color: #ffffff;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  margin: 0;
+}
+
+.workout-container {
+  width: 100%;
+  max-width: 600px;
+  padding: 30px;
+  background-color: #1e1e1e;
+  border-radius: 15px;
+  position: relative;
+  transition: all 0.5s ease;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+h1, h2 { color: #ff8c00; }
+
+textarea {
+  width: 100%;
+  height: 120px;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  font-size: 16px;
+  resize: none;
+  margin-bottom: 15px;
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  background-color: #ff8c00;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+button:hover { background-color: #e07b00; }
+
+.history-section { margin-top: 40px; border-top: 1px solid #444; padding-top: 20px; }
+.record-card { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+.highlight-text { font-size: 1.2rem; font-weight: bold; color: #ffeb3b; margin-bottom: 15px; }
+
+/* 🔥 PR 달성 시 은은하고 세련된 오렌지/화이트 글로우 효과 */
+@keyframes elegantGlow {
+  0% { box-shadow: 0 0 10px rgba(255, 140, 0, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 140, 0, 0.5); }
+  50% { box-shadow: 0 0 25px rgba(255, 120, 0, 0.8), inset 0 0 15px rgba(255, 255, 255, 0.6); border: 1px solid rgba(255, 165, 0, 1); }
+  100% { box-shadow: 0 0 10px rgba(255, 140, 0, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 140, 0, 0.5); }
+}
+
+.pr-achieved { animation: elegantGlow 4s ease-in-out infinite; }
+
+/* 불꽃 PR 알림 UI */
+.pr-notification {
+  display: none;
+  position: fixed;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #ff8c00, #ff4500);
+  padding: 15px 25px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 69, 0, 0.5);
+  z-index: 1000;
+  transition: top 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  text-align: center;
+}
+
+.pr-notification.show { display: block; top: 20px; }
