@@ -3,8 +3,6 @@ let currentViewingExercise = "";
 
 document.addEventListener('DOMContentLoaded', () => {
   initStorage();
-  
-  // 메인 카테고리 선택 로직
   document.querySelectorAll('#category-selection .cat-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const cat = e.target.dataset.cat;
@@ -24,19 +22,14 @@ function initStorage() {
   if (!localStorage.getItem('pr_exercises')) localStorage.setItem('pr_exercises', JSON.stringify({}));
 }
 
-// 화면 전환 컨트롤러
 function showView(viewId) {
   document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
   document.getElementById(viewId).classList.add('active');
-  window.scrollTo(0, 0); // 화면 전환 시 맨 위로
   
   if (viewId === 'hof-view') renderHallOfFame();
   if (viewId === 'search-view') renderAllExercises();
 }
 
-// --------------------------------------------------------
-// 운동 기록 및 다중 입력 제어
-// --------------------------------------------------------
 function startWorkout() {
   if (selectedCategories.length === 0) return alert('최소 하나 이상의 카테고리를 선택해주세요.');
   document.getElementById('current-categories-title').innerText = `운동 기록 (${selectedCategories.join(', ')})`;
@@ -68,10 +61,7 @@ function resetExerciseInputs() {
   const container = document.getElementById('exercise-inputs-container');
   container.innerHTML = `
     <div class="exercise-entry mb-20">
-      <div class="input-group mt-10">
-        <label>운동 종목</label>
-        <input type="text" class="input-name" placeholder="예: OHP, 스쿼트">
-      </div>
+      <div class="input-group mt-10"><label>운동 종목</label><input type="text" class="input-name" placeholder="예: OHP"></div>
       <div class="input-row">
         <div class="input-group"><label>무게 (kg)</label><input type="number" class="input-weight" placeholder="0"></div>
         <div class="input-group"><label>횟수 (회)</label><input type="number" class="input-reps" placeholder="0"></div>
@@ -102,7 +92,7 @@ function saveRecord(timeType) {
     }
   });
 
-  if (validWorkouts.length === 0) return alert("최소 하나의 종목(이름, 횟수, 세트)을 정확히 입력해주세요.");
+  if (validWorkouts.length === 0) return alert("최소 하나의 종목을 정확히 입력해주세요.");
 
   let recordDate = new Date();
   if (timeType === 'past') {
@@ -138,12 +128,10 @@ function saveRecord(timeType) {
   showView('hof-view');
 }
 
-// --------------------------------------------------------
-// 🏆 명예의 전당 (완벽 복구본)
-// --------------------------------------------------------
+// 🏆 명예의 전당 (볼륨 & 무게 분리 로직)
 function renderHallOfFame() {
-  const sessions = JSON.parse(localStorage.getItem('pr_sessions')) || {};
-  const exercises = JSON.parse(localStorage.getItem('pr_exercises')) || {};
+  const sessions = JSON.parse(localStorage.getItem('pr_sessions'));
+  const exercises = JSON.parse(localStorage.getItem('pr_exercises'));
   
   const volContainer = document.getElementById('hof-volume-list');
   const weightContainer = document.getElementById('hof-weight-list');
@@ -151,77 +139,64 @@ function renderHallOfFame() {
   volContainer.innerHTML = '';
   weightContainer.innerHTML = '';
 
-  // 1. 볼륨 정렬
-  const sessionList = Object.values(sessions).sort((a, b) => b.totalVolume - a.totalVolume);
-  if(sessionList.length === 0) {
-    volContainer.innerHTML = '<div style="text-align:center; padding: 30px; color:#666;">기록이 없습니다.</div>';
-  } else {
-    sessionList.forEach((session, index) => {
-      let rankIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}위`;
-      volContainer.innerHTML += `
-        <div class="record-card highlight-red">
-          <span class="volume-badge" style="color: #ff4a4a; background: rgba(255,74,74,0.15);">${session.totalVolume.toLocaleString()} kg</span>
-          <div class="record-title">${rankIcon} ${session.date}</div>
-          <div class="record-details">진행 부위: ${session.categories ? session.categories.join(', ') : ''}</div>
-        </div>
-      `;
-    });
-  }
+  // 1. 역대 세션 볼륨 랭킹 (내림차순 정렬)
+  const sortedSessions = Object.values(sessions).sort((a, b) => b.totalVolume - a.totalVolume);
+  sortedSessions.forEach((session, index) => {
+    let rank = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}위`;
+    volContainer.innerHTML += `
+      <div class="record-card highlight-red">
+        <span class="volume-badge" style="color: #ff4a4a; background: rgba(255,74,74,0.15);">${session.totalVolume.toLocaleString()} kg</span>
+        <div class="record-title">${rank} ${session.date.split(' ')[0]}</div>
+        <div class="record-details">진행 부위: ${session.categories.join(', ')}</div>
+      </div>
+    `;
+  });
 
-  // 2. 최고 무게 정렬
+  // 2. 종목별 최고 무게 PR 랭킹
   let weightRecords = [];
   for (const [name, data] of Object.entries(exercises)) {
-    if(!data.history || data.history.length === 0) continue;
-    let bestRecord = data.history.reduce((prev, curr) => (prev.weight > curr.weight) ? prev : curr);
-    if(bestRecord && bestRecord.weight > 0) {
-      weightRecords.push({ name, category: data.category, maxWeight: bestRecord.weight, date: bestRecord.date, reps: bestRecord.reps });
+    let maxWeight = 0;
+    let bestRecord = null;
+    data.history.forEach(h => {
+      if (h.weight > maxWeight) { maxWeight = h.weight; bestRecord = h; }
+    });
+    if (bestRecord && maxWeight > 0) {
+      weightRecords.push({ name, category: data.category, maxWeight, date: bestRecord.date, reps: bestRecord.reps });
     }
   }
 
+  // 무게 높은 순으로 정렬
   weightRecords.sort((a, b) => b.maxWeight - a.maxWeight);
 
-  if(weightRecords.length === 0) {
-    weightContainer.innerHTML = '<div style="text-align:center; padding: 30px; color:#666;">무게 기록이 없습니다.</div>';
-  } else {
-    weightRecords.forEach((rec, index) => {
-      let rankIcon = index === 0 ? '👑' : `${index + 1}위`;
-      weightContainer.innerHTML += `
-        <div class="record-card highlight-yellow">
-          <span class="volume-badge" style="color: #ffd700; background: rgba(255,215,0,0.15);">${rec.maxWeight} kg</span>
-          <div class="record-title">${rankIcon} ${rec.name} <span style="font-size:0.8rem; color:#888;">[${rec.category}]</span></div>
-          <div class="record-details">${rec.maxWeight}kg x ${rec.reps}회 (달성일: ${rec.date})</div>
-        </div>
-      `;
-    });
-  }
+  weightRecords.forEach((rec, index) => {
+    let rank = index === 0 ? '👑' : `${index + 1}위`;
+    weightContainer.innerHTML += `
+      <div class="record-card highlight-yellow">
+        <span class="volume-badge" style="color: #ffd700; background: rgba(255,215,0,0.15);">${rec.maxWeight} kg</span>
+        <div class="record-title">${rank} ${rec.name} <span style="font-size:0.85rem; color:#888;">[${rec.category}]</span></div>
+        <div class="record-details">${rec.maxWeight}kg x ${rec.reps}회 (달성일: ${rec.date.split(' ')[0]})</div>
+      </div>
+    `;
+  });
 }
 
-// 명예의 전당 탭 스위칭 (ID 기반으로 오류 원천 차단)
 function switchHofTab(type) {
-  const tabVol = document.getElementById('tab-volume');
-  const tabWeight = document.getElementById('tab-weight');
-  const listVol = document.getElementById('hof-volume-list');
-  const listWeight = document.getElementById('hof-weight-list');
-
-  tabVol.classList.remove('active');
-  tabWeight.classList.remove('active');
-  listVol.style.display = 'none';
-  listWeight.style.display = 'none';
+  document.querySelectorAll('.hof-tab').forEach(tab => tab.classList.remove('active'));
+  document.getElementById('hof-volume-list').style.display = 'none';
+  document.getElementById('hof-weight-list').style.display = 'none';
 
   if (type === 'volume') {
-    tabVol.classList.add('active');
-    listVol.style.display = 'flex';
+    document.querySelectorAll('.hof-tab')[0].classList.add('active');
+    document.getElementById('hof-volume-list').style.display = 'flex';
   } else {
-    tabWeight.classList.add('active');
-    listWeight.style.display = 'flex';
+    document.querySelectorAll('.hof-tab')[1].classList.add('active');
+    document.getElementById('hof-weight-list').style.display = 'flex';
   }
 }
 
-// --------------------------------------------------------
-// 검색 및 히스토리 조회
-// --------------------------------------------------------
+// 이하 검색 및 히스토리 로직 동일
 function renderAllExercises(filterCat = null, searchQuery = "") {
-  const exercises = JSON.parse(localStorage.getItem('pr_exercises')) || {};
+  const exercises = JSON.parse(localStorage.getItem('pr_exercises'));
   const container = document.getElementById('exercise-list');
   container.innerHTML = '';
   let hasResult = false;
@@ -229,7 +204,6 @@ function renderAllExercises(filterCat = null, searchQuery = "") {
   for (const [name, data] of Object.entries(exercises)) {
     if (filterCat && data.category !== filterCat) continue;
     if (searchQuery && !name.includes(searchQuery.toUpperCase())) continue;
-    
     hasResult = true;
     container.innerHTML += `
       <div class="record-card" onclick="openExerciseHistory('${name}')">
@@ -237,8 +211,7 @@ function renderAllExercises(filterCat = null, searchQuery = "") {
         <div class="record-details">총 ${data.history.length}개의 기록이 있습니다. (클릭하여 비교)</div>
       </div>`;
   }
-  
-  if (!hasResult) container.innerHTML = `<div style="text-align:center; color:#888; padding: 30px;">검색 결과가 없습니다.</div>`;
+  if (!hasResult) container.innerHTML = `<div style="text-align:center; color:#888; padding: 20px;">검색 결과가 없습니다.</div>`;
 }
 
 function searchExercises() {
@@ -284,9 +257,7 @@ function openExerciseHistory(name) {
 }
 
 function goToRecordFromHistory() {
-  const exercises = JSON.parse(localStorage.getItem('pr_exercises'));
-  const cat = exercises[currentViewingExercise].category;
-  
+  const cat = JSON.parse(localStorage.getItem('pr_exercises'))[currentViewingExercise].category;
   selectedCategories = [cat]; 
   document.getElementById('current-categories-title').innerText = `운동 기록 (${cat})`;
   resetExerciseInputs();
