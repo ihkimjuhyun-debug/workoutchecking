@@ -33,11 +33,17 @@
     </div>
 
     <div id="record-view" class="view-section">
-      <h2 id="current-categories-title" class="mb-20">운동 기록</h2>
+      <h2 id="current-categories-title" class="mb-10">운동 기록</h2>
+      
+      <p style="font-size: 0.85rem; color: var(--primary); font-weight: bold; margin-bottom: 10px;">👇 카드를 터치하여 종목을 빠르게 추가하세요!</p>
+      <div id="quick-select-container" class="quick-card-container mb-20"></div>
+      
       <div id="exercise-inputs-container"></div>
+      
       <button class="secondary-btn mb-20" style="border: 1px dashed var(--primary); background: transparent; color: var(--primary);" onclick="addExerciseInput()">
-        ➕ 다른 운동 종목 추가하기
+        ➕ 다른 운동 종목 추가하기 (수동)
       </button>
+
       <div class="action-buttons">
         <button class="primary-btn" onclick="saveRecord('now')">지금 운동 기록하기 (현재 시간)</button>
         <button class="secondary-btn mt-10" onclick="togglePastDateInput()">운동 후 과거 일지 기록하기</button>
@@ -77,10 +83,7 @@
       <button class="secondary-btn mt-20 mb-10" onclick="toggleCustomExerciseForm()">➕ 내 맞춤 종목 추가하기</button>
       <div id="custom-exercise-form" class="record-card" style="display: none; border-color: var(--primary);">
         <h3 class="mb-10" style="color: var(--primary);">새 종목 만들기</h3>
-        <div class="input-group">
-          <label>종목 이름</label>
-          <input type="text" id="custom-ex-name" placeholder="예: 힙 쓰러스트">
-        </div>
+        <div class="input-group"><label>종목 이름</label><input type="text" id="custom-ex-name" placeholder="예: 힙 쓰러스트"></div>
         <div class="input-row">
           <div class="input-group">
             <label>카테고리</label>
@@ -89,10 +92,7 @@
               <option value="하체">하체</option><option value="팔">팔</option><option value="복근">복근</option>
             </select>
           </div>
-          <div class="input-group">
-            <label>자극 부위</label>
-            <input type="text" id="custom-ex-target" placeholder="예: 둔근, 햄스트링">
-          </div>
+          <div class="input-group"><label>자극 부위</label><input type="text" id="custom-ex-target" placeholder="예: 둔근, 햄스트링"></div>
         </div>
         <button class="primary-btn mt-10" onclick="addCustomExercise()">종목 추가 완료</button>
       </div>
@@ -117,15 +117,12 @@
       <div id="session-workout-list" class="list-container mb-20"></div>
 
       <div class="record-card mt-20" style="border: 1px dashed var(--primary); background: rgba(255,140,0,0.05);">
-        <h3 class="mb-10" style="color: var(--primary);">➕ 이 날짜에 누락된 종목 복기하기</h3>
-        <div class="input-group">
-          <label>운동 종목</label>
-          <input type="text" id="past-add-name" placeholder="예: 바벨로우">
-        </div>
+        <h3 class="mb-10" style="color: var(--primary);">➕ 누락된 종목 복기하기</h3>
+        <div class="input-group"><label>운동 종목</label><input type="text" id="past-add-name" placeholder="예: 바벨로우"></div>
         <div class="input-row mt-10">
           <div class="input-group"><label>무게 (kg)</label><input type="number" id="past-add-weight" placeholder="0"></div>
           <div class="input-group"><label>횟수 (회)</label><input type="number" id="past-add-reps" placeholder="0"></div>
-          <div class="input-group"><label>세트 (세트)</label><input type="number" id="past-add-sets" placeholder="0"></div>
+          <div class="input-group"><label>세트</label><input type="number" id="past-add-sets" placeholder="0"></div>
         </div>
         <button class="primary-btn mt-20" onclick="addWorkoutToPastSession()">기록 복기 / 추가하기</button>
       </div>
