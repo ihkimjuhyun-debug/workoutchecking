@@ -69,19 +69,21 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert
 .history-legend { font-size: 0.85rem; display: flex; gap: 15px; font-weight: bold; }
 .legend-red { color: #ff4a4a; } .legend-yellow { color: #ffd700; }
 
-/* 🔥 신규: 낱말 카드 (가로 스크롤 미니 카드) 스타일 */
+/* 🔥 낱말 카드 렌더링 붕괴 방지용 CSS */
 .quick-card-container {
   display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px;
   scrollbar-width: thin; scrollbar-color: var(--primary) #1e1e1e;
+  min-height: 80px; /* 카드가 증발하지 않도록 절대 높이 고정 */
+  width: 100%;
 }
 .quick-card-container::-webkit-scrollbar { height: 6px; }
 .quick-card-container::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
 .quick-card {
-  flex: 0 0 auto; background: #2a2a2a; border-radius: 10px; padding: 10px;
+  flex: 0 0 auto; background: #2a2a2a; border-radius: 10px; padding: 12px;
   border: 1px solid #444; cursor: pointer; transition: all 0.2s;
-  display: flex; align-items: center; gap: 10px; min-width: 160px; max-width: 200px;
+  display: flex; align-items: center; gap: 10px; min-width: 160px; max-width: 220px;
 }
 .quick-card:hover { border-color: var(--primary); background: #333; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(255,140,0,0.15); }
-.quick-picto-mini { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; background: #121212; border: 1px solid #333; flex-shrink: 0; }
+.quick-picto-mini { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; background: #121212; border: 1px solid #333; flex-shrink: 0; }
 .quick-info { display: flex; flex-direction: column; overflow: hidden; }
-.quick-title { font-weight: bold; font-size: 0.9rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quick-title { font-weight: bold; font-size: 0.95rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
