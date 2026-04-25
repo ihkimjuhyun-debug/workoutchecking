@@ -20,7 +20,7 @@
     </header>
 
     <div id="home-view" class="view-section active">
-      <h2>오늘의 운동 부위 선택 <span style="font-size: 0.9rem; color: #888;">(다중 선택 가능)</span></h2>
+      <h2>오늘의 운동 부위 선택 <span style="font-size: 0.9rem; color: #888;">(다중 선택)</span></h2>
       <div class="category-grid mt-20" id="category-selection">
         <div class="cat-btn" data-cat="어깨">어깨</div>
         <div class="cat-btn" data-cat="등">등</div>
@@ -34,19 +34,14 @@
 
     <div id="record-view" class="view-section">
       <h2 id="current-categories-title" class="mb-20">운동 기록</h2>
-      
-      <div id="exercise-inputs-container">
-        </div>
-
+      <div id="exercise-inputs-container"></div>
       <button class="secondary-btn mb-20" style="border: 1px dashed var(--primary); background: transparent; color: var(--primary);" onclick="addExerciseInput()">
         ➕ 다른 운동 종목 추가하기
       </button>
-
       <div class="action-buttons">
         <button class="primary-btn" onclick="saveRecord('now')">지금 운동 기록하기 (현재 시간)</button>
         <button class="secondary-btn mt-10" onclick="togglePastDateInput()">운동 후 과거 일지 기록하기</button>
       </div>
-
       <div id="past-date-container" style="display: none; margin-top: 15px;">
         <label style="display:block; margin-bottom:5px;">과거 날짜 및 시간 선택</label>
         <input type="datetime-local" id="input-past-date" step="1">
@@ -56,20 +51,17 @@
 
     <div id="hof-view" class="view-section">
       <h2 class="mb-20">🏆 명예의 전당</h2>
-      
       <div class="hof-tabs mb-20">
         <button class="hof-tab active" onclick="switchHofTab('volume')">🔴 역대 볼륨 순위</button>
         <button class="hof-tab" onclick="switchHofTab('weight')">🟡 최고 무게 PR</button>
       </div>
-
       <div id="hof-volume-list" class="list-container"></div>
       <div id="hof-weight-list" class="list-container" style="display: none;"></div>
     </div>
 
     <div id="search-view" class="view-section">
       <h2 class="mb-20">🔍 종목 검색 및 카테고리</h2>
-      
-      <input type="text" id="search-input" placeholder="종목 이름 검색 (예: OHP)" onkeyup="searchExercises()">
+      <input type="text" id="search-input" placeholder="종목 이름 검색 (예: 스쿼트)" onkeyup="searchExercises()">
       
       <div class="category-grid mt-20 mb-20" id="filter-categories">
         <div class="cat-btn" onclick="filterByCategory('어깨', this)">어깨</div>
@@ -81,17 +73,62 @@
       </div>
 
       <div id="exercise-list" class="list-container"></div>
+
+      <button class="secondary-btn mt-20 mb-10" onclick="toggleCustomExerciseForm()">➕ 내 맞춤 종목 추가하기</button>
+      <div id="custom-exercise-form" class="record-card" style="display: none; border-color: var(--primary);">
+        <h3 class="mb-10" style="color: var(--primary);">새 종목 만들기</h3>
+        <div class="input-group">
+          <label>종목 이름</label>
+          <input type="text" id="custom-ex-name" placeholder="예: 힙 쓰러스트">
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label>카테고리</label>
+            <select id="custom-ex-cat" class="custom-select">
+              <option value="어깨">어깨</option><option value="등">등</option><option value="가슴">가슴</option>
+              <option value="하체">하체</option><option value="팔">팔</option><option value="복근">복근</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>자극 부위</label>
+            <input type="text" id="custom-ex-target" placeholder="예: 둔근, 햄스트링">
+          </div>
+        </div>
+        <button class="primary-btn mt-10" onclick="addCustomExercise()">종목 추가 완료</button>
+      </div>
     </div>
 
     <div id="history-view" class="view-section">
       <button class="secondary-btn mb-20" onclick="showView('search-view')" style="width: auto; padding: 10px 20px;">⬅ 뒤로 가기</button>
       <h2 id="history-title" class="mb-10">종목 기록</h2>
       <div class="history-legend mb-20">
-        <span class="legend-red">🔴 최고 볼륨</span>
-        <span class="legend-yellow">🟡 최고 무게</span>
+        <span class="legend-red">🔴 최고 볼륨</span><span class="legend-yellow">🟡 최고 무게</span>
       </div>
       <div id="history-list" class="list-container mb-20"></div>
       <button class="primary-btn" onclick="goToRecordFromHistory()">이 종목 바로 기록하기</button>
+    </div>
+
+    <div id="session-detail-view" class="view-section">
+      <button class="secondary-btn mb-20" onclick="showView('hof-view')" style="width: auto; padding: 10px 20px;">⬅ 명예의 전당으로</button>
+      <h2 id="session-detail-title" class="mb-10">세션 상세 기록</h2>
+      <div id="session-detail-info" class="record-details mb-20" style="color: var(--primary); font-weight: bold;"></div>
+      
+      <h3 class="mb-10">📝 진행했던 운동 순서</h3>
+      <div id="session-workout-list" class="list-container mb-20"></div>
+
+      <div class="record-card mt-20" style="border: 1px dashed var(--primary); background: rgba(255,140,0,0.05);">
+        <h3 class="mb-10" style="color: var(--primary);">➕ 이 날짜에 누락된 종목 복기하기</h3>
+        <div class="input-group">
+          <label>운동 종목</label>
+          <input type="text" id="past-add-name" placeholder="예: 바벨로우">
+        </div>
+        <div class="input-row mt-10">
+          <div class="input-group"><label>무게 (kg)</label><input type="number" id="past-add-weight" placeholder="0"></div>
+          <div class="input-group"><label>횟수 (회)</label><input type="number" id="past-add-reps" placeholder="0"></div>
+          <div class="input-group"><label>세트 (세트)</label><input type="number" id="past-add-sets" placeholder="0"></div>
+        </div>
+        <button class="primary-btn mt-20" onclick="addWorkoutToPastSession()">기록 복기 / 추가하기</button>
+      </div>
     </div>
 
   </div>
