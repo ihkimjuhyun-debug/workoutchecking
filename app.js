@@ -2,12 +2,16 @@ let selectedCategories = [];
 let currentViewingExercise = "";
 let currentEditingSessionKey = "";
 
-const safeImg1 = "https://via.placeholder.com/60/2a2a2a/ff8c00?text=자세1";
-const safeImg2 = "https://via.placeholder.com/60/2a2a2a/ff8c00?text=자세2";
+// 🔥 핵심 해결책: 외부 서버 접속이 필요 없는 내장 SVG 데이터 (네트워크 에러 원천 차단)
+function getSvgDataUri(text) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect width="60" height="60" fill="#2a2a2a"/><text x="50%" y="50%" font-family="sans-serif" font-size="14" fill="#ff8c00" text-anchor="middle" dominant-baseline="middle">${text}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
 
-// 🔥 부위별 10개씩 총 60개 정규화 완료된 완벽한 DB
+const safeImg1 = getSvgDataUri('자세1');
+const safeImg2 = getSvgDataUri('자세2');
+
 const defaultExercisesDB = {
-  // 어깨 10종
   "OHP": { category: "어깨", target: "전/측면 삼각근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "덤벨 숄더 프레스": { category: "어깨", target: "전/측면 삼각근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "사이드 레터럴 레이즈": { category: "어깨", target: "측면 삼각근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
@@ -19,7 +23,6 @@ const defaultExercisesDB = {
   "페이스 풀": { category: "어깨", target: "후면 삼각근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "리버스 펙덱 플라이": { category: "어깨", target: "후면 삼각근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
 
-  // 등 10종 (오타 통합 및 광배근/등 구분 명확화)
   "데드리프트": { category: "등", target: "후면 사슬 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "랫풀다운": { category: "등", target: "광배근 상/하부", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "바벨 로우": { category: "등", target: "등 두께, 광배근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
@@ -31,7 +34,6 @@ const defaultExercisesDB = {
   "펜들레이 로우": { category: "등", target: "등 폭발력", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "백 익스텐션": { category: "등", target: "척추기립근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
 
-  // 가슴 10종
   "벤치프레스": { category: "가슴", target: "가슴 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "인클라인 벤치프레스": { category: "가슴", target: "윗가슴", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "디클라인 벤치프레스": { category: "가슴", target: "아랫가슴", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
@@ -43,8 +45,7 @@ const defaultExercisesDB = {
   "체스트 프레스 머신": { category: "가슴", target: "가슴 전체 안정화", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "딥스": { category: "가슴", target: "아랫가슴 극대화", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
 
-  // 하체 10종
-  "스쿼트": { category: "하체", 대퇴사두: "하체 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
+  "스쿼트": { category: "하체", target: "하체 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "레그프레스": { category: "하체", target: "대퇴사두", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "런지": { category: "하체", target: "대퇴, 둔근 편측", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "레그 익스텐션": { category: "하체", target: "대퇴사두 고립", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
@@ -55,7 +56,6 @@ const defaultExercisesDB = {
   "핵스쿼트": { category: "하체", target: "대퇴사두 집중", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "힙 쓰러스트": { category: "하체", target: "대둔근 폭발력", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
 
-  // 팔 10종
   "바벨 컬": { category: "팔", target: "이두근 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "덤벨 컬": { category: "팔", target: "이두근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "해머 컬": { category: "팔", target: "상완근, 전완근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
@@ -67,7 +67,6 @@ const defaultExercisesDB = {
   "클로즈그립 벤치프레스": { category: "팔", target: "삼두근 볼륨", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "리버스 컬": { category: "팔", target: "전완근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
 
-  // 복근 10종
   "크런치": { category: "복근", target: "상복부", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "레그레이즈": { category: "복근", target: "하복부", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
   "플랭크": { category: "복근", target: "코어 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
@@ -102,11 +101,13 @@ function initStorage() {
   if (!storedExercises) {
     storedExercises = defaultExercisesDB; isUpdated = true;
   } else {
+    // 1. 없는 기본 종목 채우기
     for (const [name, data] of Object.entries(defaultExercisesDB)) {
       if (!storedExercises[name]) { storedExercises[name] = data; isUpdated = true; }
     }
+    // 2. 🔥 자동 복구: 외부 이미지 URL이 깨진 데이터들을 모두 내장 SVG로 갈아치움
     for (const key in storedExercises) {
-      if (storedExercises[key].img1 && storedExercises[key].img1.includes('&text=')) {
+      if (storedExercises[key].img1 && (storedExercises[key].img1.includes('placeholder') || storedExercises[key].img1.includes('dummyimage'))) {
         storedExercises[key].img1 = safeImg1; storedExercises[key].img2 = safeImg2; isUpdated = true;
       }
     }
@@ -129,7 +130,7 @@ function startWorkout() {
   document.getElementById('past-date-container').style.display = 'none'; showView('record-view');
 }
 
-// 🔥 통합 카드 렌더러 (2 이미지 / 이름, 타겟 / 즐찾, 휴지통)
+// 🌟 공통 종목 카드 렌더러 (createElement를 사용하여 태그 파괴 완벽 방어)
 function createExerciseCardElement(ex, isQuickSelect = false) {
   const card = document.createElement('div');
   card.className = 'ex-card-layout';
@@ -140,15 +141,11 @@ function createExerciseCardElement(ex, isQuickSelect = false) {
   const imgSource1 = ex.img1 || safeImg1;
   const imgSource2 = ex.img2 || safeImg2;
 
-  // 좌측 2컷 이미지
-  const leftHTML = `
+  card.innerHTML = `
     <div class="ex-card-left">
-      <img src="${imgSource1}" class="ex-picto" alt="Start">
-      <img src="${imgSource2}" class="ex-picto" alt="End">
-    </div>`;
-
-  // 우측 타이틀, 아이콘, 뱃지
-  const rightHTML = `
+      <img src="${imgSource1}" class="ex-picto" alt="picto1">
+      <img src="${imgSource2}" class="ex-picto" alt="picto2">
+    </div>
     <div class="ex-card-right">
       <div class="ex-header">
         <span class="ex-title">${ex.name}</span>
@@ -160,9 +157,8 @@ function createExerciseCardElement(ex, isQuickSelect = false) {
       <div class="ex-target">
         <span class="target-badge">${targetText}</span>
       </div>
-    </div>`;
-
-  card.innerHTML = leftHTML + rightHTML;
+    </div>
+  `;
   return card;
 }
 
@@ -199,7 +195,6 @@ function renderAllExercises(filterCat = null, searchQuery = "") {
   if (!hasResult) container.innerHTML = `<div style="text-align:center; color:#888; padding: 20px;">검색 결과가 없습니다.</div>`;
 }
 
-// 🗑️ 신규: 휴지통 삭제 로직
 function deleteExercise(name) {
   if(!confirm(`정말 [${name}] 종목을 삭제하시겠습니까?\n(오타를 지우거나 커스텀 종목을 삭제할 때 유용합니다)`)) return;
   
@@ -207,12 +202,8 @@ function deleteExercise(name) {
   delete exercises[name];
   localStorage.setItem('pr_exercises', JSON.stringify(exercises));
   
-  // 현재 보고 있는 화면에 따라 즉시 새로고침
-  if (document.getElementById('search-view').classList.contains('active')) {
-    searchExercises();
-  } else if (document.getElementById('record-view').classList.contains('active')) {
-    renderQuickSelectCards();
-  }
+  if (document.getElementById('search-view').classList.contains('active')) searchExercises();
+  else if (document.getElementById('record-view').classList.contains('active')) renderQuickSelectCards();
 }
 
 function toggleFavorite(name) {
