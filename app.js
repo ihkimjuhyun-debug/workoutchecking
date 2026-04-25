@@ -2,81 +2,97 @@ let selectedCategories = [];
 let currentViewingExercise = "";
 let currentEditingSessionKey = "";
 
-// 🔥 핵심 해결책: 외부 서버 접속이 필요 없는 내장 SVG 데이터 (네트워크 에러 원천 차단)
-function getSvgDataUri(text) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect width="60" height="60" fill="#2a2a2a"/><text x="50%" y="50%" font-family="sans-serif" font-size="14" fill="#ff8c00" text-anchor="middle" dominant-baseline="middle">${text}</text></svg>`;
+// 🔥 혁신 기능: 이름과 카테고리를 기반으로 1초 식별 다이내믹 썸네일 자동 생성!
+function getDynamicSvg(name, category, stepText) {
+  // 부위별 직관적인 고유 컬러 매핑
+  const catColors = { 
+    "어깨": "#FF5722", // 주황 
+    "등": "#4CAF50",   // 초록
+    "가슴": "#2196F3", // 파랑
+    "하체": "#9C27B0", // 보라
+    "팔": "#FFC107",   // 노랑
+    "복근": "#E91E63"  // 핑크
+  };
+  const color = catColors[category] || "#ff8c00";
+  // 이름의 앞 두 글자 추출 (예: OHP -> OH, 스쿼트 -> 스쿼)
+  const shortName = name.substring(0, 2).toUpperCase();
+  
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+    <rect width="60" height="60" fill="#222" rx="8" stroke="#333" stroke-width="1"/>
+    <text x="50%" y="42%" font-family="sans-serif" font-size="18" font-weight="900" fill="${color}" text-anchor="middle">${shortName}</text>
+    <text x="50%" y="74%" font-family="sans-serif" font-size="11" fill="#aaa" text-anchor="middle">${stepText}</text>
+  </svg>`;
+  
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
-const safeImg1 = getSvgDataUri('자세1');
-const safeImg2 = getSvgDataUri('자세2');
-
+// 기본 DB 60종 (이미지는 빈칸으로 둠, 렌더링할 때 자동 생성됨)
 const defaultExercisesDB = {
-  "OHP": { category: "어깨", target: "전/측면 삼각근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "덤벨 숄더 프레스": { category: "어깨", target: "전/측면 삼각근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "사이드 레터럴 레이즈": { category: "어깨", target: "측면 삼각근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "프론트 레이즈": { category: "어깨", target: "전면 삼각근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "벤트오버 레터럴 레이즈": { category: "어깨", target: "후면 삼각근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "밀리터리 프레스": { category: "어깨", target: "어깨, 코어", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "아놀드 프레스": { category: "어깨", target: "전면 삼각근 극대화", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "업라이트 로우": { category: "어깨", target: "측면 삼각근, 승모", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "페이스 풀": { category: "어깨", target: "후면 삼각근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "리버스 펙덱 플라이": { category: "어깨", target: "후면 삼각근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
+  "OHP": { category: "어깨", target: "전/측면 삼각근", fav: false, img1: "", img2: "", history: [] },
+  "덤벨 숄더 프레스": { category: "어깨", target: "전/측면 삼각근", fav: false, img1: "", img2: "", history: [] },
+  "사이드 레터럴 레이즈": { category: "어깨", target: "측면 삼각근", fav: false, img1: "", img2: "", history: [] },
+  "프론트 레이즈": { category: "어깨", target: "전면 삼각근", fav: false, img1: "", img2: "", history: [] },
+  "벤트오버 레터럴 레이즈": { category: "어깨", target: "후면 삼각근", fav: false, img1: "", img2: "", history: [] },
+  "밀리터리 프레스": { category: "어깨", target: "어깨, 코어", fav: false, img1: "", img2: "", history: [] },
+  "아놀드 프레스": { category: "어깨", target: "전면 삼각근 극대화", fav: false, img1: "", img2: "", history: [] },
+  "업라이트 로우": { category: "어깨", target: "측면 삼각근, 승모", fav: false, img1: "", img2: "", history: [] },
+  "페이스 풀": { category: "어깨", target: "후면 삼각근", fav: false, img1: "", img2: "", history: [] },
+  "리버스 펙덱 플라이": { category: "어깨", target: "후면 삼각근", fav: false, img1: "", img2: "", history: [] },
 
-  "데드리프트": { category: "등", target: "후면 사슬 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "랫풀다운": { category: "등", target: "광배근 상/하부", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "바벨 로우": { category: "등", target: "등 두께, 광배근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "덤벨 로우": { category: "등", target: "광배근 편측", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "풀업": { category: "등", target: "광배근 너비", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "시티드 로우": { category: "등", target: "승모근, 등 중앙", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "티바 로우": { category: "등", target: "등 두께", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "암풀다운": { category: "등", target: "광배근 고립", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "펜들레이 로우": { category: "등", target: "등 폭발력", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "백 익스텐션": { category: "등", target: "척추기립근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
+  "데드리프트": { category: "등", target: "후면 사슬 전체", fav: false, img1: "", img2: "", history: [] },
+  "랫풀다운": { category: "등", target: "광배근 상/하부", fav: false, img1: "", img2: "", history: [] },
+  "바벨 로우": { category: "등", target: "등 두께, 광배근", fav: false, img1: "", img2: "", history: [] },
+  "덤벨 로우": { category: "등", target: "광배근 편측", fav: false, img1: "", img2: "", history: [] },
+  "풀업": { category: "등", target: "광배근 너비", fav: false, img1: "", img2: "", history: [] },
+  "시티드 로우": { category: "등", target: "승모근, 등 중앙", fav: false, img1: "", img2: "", history: [] },
+  "티바 로우": { category: "등", target: "등 두께", fav: false, img1: "", img2: "", history: [] },
+  "암풀다운": { category: "등", target: "광배근 고립", fav: false, img1: "", img2: "", history: [] },
+  "펜들레이 로우": { category: "등", target: "등 폭발력", fav: false, img1: "", img2: "", history: [] },
+  "백 익스텐션": { category: "등", target: "척추기립근", fav: false, img1: "", img2: "", history: [] },
 
-  "벤치프레스": { category: "가슴", target: "가슴 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "인클라인 벤치프레스": { category: "가슴", target: "윗가슴", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "디클라인 벤치프레스": { category: "가슴", target: "아랫가슴", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "덤벨 프레스": { category: "가슴", target: "가슴 가동범위", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "덤벨 플라이": { category: "가슴", target: "가슴 안쪽 고립", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "펙덱 플라이": { category: "가슴", target: "가슴 안쪽 수축", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "케이블 크로스오버": { category: "가슴", target: "가슴 하부 라인", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "푸쉬업": { category: "가슴", target: "가슴, 코어", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "체스트 프레스 머신": { category: "가슴", target: "가슴 전체 안정화", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "딥스": { category: "가슴", target: "아랫가슴 극대화", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
+  "벤치프레스": { category: "가슴", target: "가슴 전체", fav: false, img1: "", img2: "", history: [] },
+  "인클라인 벤치프레스": { category: "가슴", target: "윗가슴", fav: false, img1: "", img2: "", history: [] },
+  "디클라인 벤치프레스": { category: "가슴", target: "아랫가슴", fav: false, img1: "", img2: "", history: [] },
+  "덤벨 프레스": { category: "가슴", target: "가슴 가동범위", fav: false, img1: "", img2: "", history: [] },
+  "덤벨 플라이": { category: "가슴", target: "가슴 안쪽 고립", fav: false, img1: "", img2: "", history: [] },
+  "펙덱 플라이": { category: "가슴", target: "가슴 안쪽 수축", fav: false, img1: "", img2: "", history: [] },
+  "케이블 크로스오버": { category: "가슴", target: "가슴 하부 라인", fav: false, img1: "", img2: "", history: [] },
+  "푸쉬업": { category: "가슴", target: "가슴, 코어", fav: false, img1: "", img2: "", history: [] },
+  "체스트 프레스 머신": { category: "가슴", target: "가슴 전체 안정화", fav: false, img1: "", img2: "", history: [] },
+  "딥스": { category: "가슴", target: "아랫가슴 극대화", fav: false, img1: "", img2: "", history: [] },
 
-  "스쿼트": { category: "하체", target: "하체 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "레그프레스": { category: "하체", target: "대퇴사두", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "런지": { category: "하체", target: "대퇴, 둔근 편측", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "레그 익스텐션": { category: "하체", target: "대퇴사두 고립", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "레그 컬": { category: "하체", target: "햄스트링", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "루마니안 데드리프트": { category: "하체", target: "햄스트링, 둔근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "카프 레이즈": { category: "하체", target: "종아리", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "브이스쿼트": { category: "하체", target: "대퇴사두, 둔근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "핵스쿼트": { category: "하체", target: "대퇴사두 집중", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "힙 쓰러스트": { category: "하체", target: "대둔근 폭발력", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
+  "스쿼트": { category: "하체", target: "하체 전체", fav: false, img1: "", img2: "", history: [] },
+  "레그프레스": { category: "하체", target: "대퇴사두", fav: false, img1: "", img2: "", history: [] },
+  "런지": { category: "하체", target: "대퇴, 둔근 편측", fav: false, img1: "", img2: "", history: [] },
+  "레그 익스텐션": { category: "하체", target: "대퇴사두 고립", fav: false, img1: "", img2: "", history: [] },
+  "레그 컬": { category: "하체", target: "햄스트링", fav: false, img1: "", img2: "", history: [] },
+  "루마니안 데드리프트": { category: "하체", target: "햄스트링, 둔근", fav: false, img1: "", img2: "", history: [] },
+  "카프 레이즈": { category: "하체", target: "종아리", fav: false, img1: "", img2: "", history: [] },
+  "브이스쿼트": { category: "하체", target: "대퇴사두, 둔근", fav: false, img1: "", img2: "", history: [] },
+  "핵스쿼트": { category: "하체", target: "대퇴사두 집중", fav: false, img1: "", img2: "", history: [] },
+  "힙 쓰러스트": { category: "하체", target: "대둔근 폭발력", fav: false, img1: "", img2: "", history: [] },
 
-  "바벨 컬": { category: "팔", target: "이두근 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "덤벨 컬": { category: "팔", target: "이두근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "해머 컬": { category: "팔", target: "상완근, 전완근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "프리처 컬": { category: "팔", target: "이두근 고립", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "케이블 푸쉬다운": { category: "팔", target: "삼두근 외측", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "트라이셉스 익스텐션": { category: "팔", target: "삼두근 장두", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "라트익 (바벨)": { category: "팔", target: "삼두근 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "덤벨 킥백": { category: "팔", target: "삼두근 수축", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "클로즈그립 벤치프레스": { category: "팔", target: "삼두근 볼륨", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "리버스 컬": { category: "팔", target: "전완근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
+  "바벨 컬": { category: "팔", target: "이두근 전체", fav: false, img1: "", img2: "", history: [] },
+  "덤벨 컬": { category: "팔", target: "이두근", fav: false, img1: "", img2: "", history: [] },
+  "해머 컬": { category: "팔", target: "상완근, 전완근", fav: false, img1: "", img2: "", history: [] },
+  "프리처 컬": { category: "팔", target: "이두근 고립", fav: false, img1: "", img2: "", history: [] },
+  "케이블 푸쉬다운": { category: "팔", target: "삼두근 외측", fav: false, img1: "", img2: "", history: [] },
+  "트라이셉스 익스텐션": { category: "팔", target: "삼두근 장두", fav: false, img1: "", img2: "", history: [] },
+  "라트익 (바벨)": { category: "팔", target: "삼두근 전체", fav: false, img1: "", img2: "", history: [] },
+  "덤벨 킥백": { category: "팔", target: "삼두근 수축", fav: false, img1: "", img2: "", history: [] },
+  "클로즈그립 벤치프레스": { category: "팔", target: "삼두근 볼륨", fav: false, img1: "", img2: "", history: [] },
+  "리버스 컬": { category: "팔", target: "전완근", fav: false, img1: "", img2: "", history: [] },
 
-  "크런치": { category: "복근", target: "상복부", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "레그레이즈": { category: "복근", target: "하복부", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "플랭크": { category: "복근", target: "코어 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "사이드 플랭크": { category: "복근", target: "외복사근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "바이시클 크런치": { category: "복근", target: "복사근, 상복부", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "행잉 레그레이즈": { category: "복근", target: "하복부 고립", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "케이블 크런치": { category: "복근", target: "복직근 두께", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "러시안 트위스트": { category: "복근", target: "코어 회전근", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "싯업": { category: "복근", target: "복직근 전체", fav: false, img1: safeImg1, img2: safeImg2, history: [] },
-  "AB 롤아웃": { category: "복근", target: "코어 강성", fav: false, img1: safeImg1, img2: safeImg2, history: [] }
+  "크런치": { category: "복근", target: "상복부", fav: false, img1: "", img2: "", history: [] },
+  "레그레이즈": { category: "복근", target: "하복부", fav: false, img1: "", img2: "", history: [] },
+  "플랭크": { category: "복근", target: "코어 전체", fav: false, img1: "", img2: "", history: [] },
+  "사이드 플랭크": { category: "복근", target: "외복사근", fav: false, img1: "", img2: "", history: [] },
+  "바이시클 크런치": { category: "복근", target: "복사근, 상복부", fav: false, img1: "", img2: "", history: [] },
+  "행잉 레그레이즈": { category: "복근", target: "하복부 고립", fav: false, img1: "", img2: "", history: [] },
+  "케이블 크런치": { category: "복근", target: "복직근 두께", fav: false, img1: "", img2: "", history: [] },
+  "러시안 트위스트": { category: "복근", target: "코어 회전근", fav: false, img1: "", img2: "", history: [] },
+  "싯업": { category: "복근", target: "복직근 전체", fav: false, img1: "", img2: "", history: [] },
+  "AB 롤아웃": { category: "복근", target: "코어 강성", fav: false, img1: "", img2: "", history: [] }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -101,14 +117,13 @@ function initStorage() {
   if (!storedExercises) {
     storedExercises = defaultExercisesDB; isUpdated = true;
   } else {
-    // 1. 없는 기본 종목 채우기
     for (const [name, data] of Object.entries(defaultExercisesDB)) {
       if (!storedExercises[name]) { storedExercises[name] = data; isUpdated = true; }
     }
-    // 2. 🔥 자동 복구: 외부 이미지 URL이 깨진 데이터들을 모두 내장 SVG로 갈아치움
+    // 🗑️ 오작동했던 예전 placeholder 잔재들을 싹 비워줍니다.
     for (const key in storedExercises) {
-      if (storedExercises[key].img1 && (storedExercises[key].img1.includes('placeholder') || storedExercises[key].img1.includes('dummyimage'))) {
-        storedExercises[key].img1 = safeImg1; storedExercises[key].img2 = safeImg2; isUpdated = true;
+      if (storedExercises[key].img1 && (storedExercises[key].img1.includes('placeholder') || storedExercises[key].img1.includes('자세'))) {
+        storedExercises[key].img1 = ""; storedExercises[key].img2 = ""; isUpdated = true;
       }
     }
   }
@@ -130,7 +145,7 @@ function startWorkout() {
   document.getElementById('past-date-container').style.display = 'none'; showView('record-view');
 }
 
-// 🌟 공통 종목 카드 렌더러 (createElement를 사용하여 태그 파괴 완벽 방어)
+// 🌟 다이내믹 렌더러: 이미지가 없으면 이름/컬러 기반 예쁜 썸네일을 즉시 생성해서 보여줌
 function createExerciseCardElement(ex, isQuickSelect = false) {
   const card = document.createElement('div');
   card.className = 'ex-card-layout';
@@ -138,13 +153,15 @@ function createExerciseCardElement(ex, isQuickSelect = false) {
 
   const starClass = ex.fav ? 'icon-fav active' : 'icon-fav';
   const targetText = ex.target || ex.category;
-  const imgSource1 = ex.img1 || safeImg1;
-  const imgSource2 = ex.img2 || safeImg2;
+  
+  // 실제 URL이 없으면 스마트 자동 생성기를 돌립니다
+  const finalImg1 = ex.img1 ? ex.img1 : getDynamicSvg(ex.name, ex.category, "수축");
+  const finalImg2 = ex.img2 ? ex.img2 : getDynamicSvg(ex.name, ex.category, "이완");
 
   card.innerHTML = `
     <div class="ex-card-left">
-      <img src="${imgSource1}" class="ex-picto" alt="picto1">
-      <img src="${imgSource2}" class="ex-picto" alt="picto2">
+      <img src="${finalImg1}" class="ex-picto" alt="img1" onerror="this.src='${getDynamicSvg(ex.name, ex.category, "수축")}'">
+      <img src="${finalImg2}" class="ex-picto" alt="img2" onerror="this.src='${getDynamicSvg(ex.name, ex.category, "이완")}'">
     </div>
     <div class="ex-card-right">
       <div class="ex-header">
@@ -196,12 +213,10 @@ function renderAllExercises(filterCat = null, searchQuery = "") {
 }
 
 function deleteExercise(name) {
-  if(!confirm(`정말 [${name}] 종목을 삭제하시겠습니까?\n(오타를 지우거나 커스텀 종목을 삭제할 때 유용합니다)`)) return;
-  
+  if(!confirm(`정말 [${name}] 종목을 삭제하시겠습니까?`)) return;
   const exercises = JSON.parse(localStorage.getItem('pr_exercises'));
   delete exercises[name];
   localStorage.setItem('pr_exercises', JSON.stringify(exercises));
-  
   if (document.getElementById('search-view').classList.contains('active')) searchExercises();
   else if (document.getElementById('record-view').classList.contains('active')) renderQuickSelectCards();
 }
@@ -210,7 +225,6 @@ function toggleFavorite(name) {
   const exercises = JSON.parse(localStorage.getItem('pr_exercises'));
   exercises[name].fav = !exercises[name].fav;
   localStorage.setItem('pr_exercises', JSON.stringify(exercises));
-  
   if (document.getElementById('search-view').classList.contains('active')) searchExercises();
   else if (document.getElementById('record-view').classList.contains('active')) renderQuickSelectCards();
 }
@@ -289,7 +303,7 @@ function saveRecord(timeType) {
 
   validWorkouts.forEach(w => {
     sessions[sessionKey].totalVolume += w.volume; sessions[sessionKey].workouts.push(w); sessionTotalVolume += w.volume;
-    if (!exercises[w.name]) exercises[w.name] = { category: selectedCategories[0], target: selectedCategories[0], fav: false, img1: safeImg1, img2: safeImg2, history: [] };
+    if (!exercises[w.name]) exercises[w.name] = { category: selectedCategories[0], target: selectedCategories[0], fav: false, img1: "", img2: "", history: [] };
     exercises[w.name].history.push({ date: fullDateString, timestamp: recordDate.getTime(), weight: w.weight, reps: w.reps, sets: w.sets, volume: w.volume });
   });
 
@@ -373,7 +387,7 @@ function addWorkoutToPastSession() {
   if (!session.workouts) session.workouts = []; if (!session.timestamp) session.timestamp = new Date().getTime();
   session.workouts.push({ name, weight, reps, sets, volume }); session.totalVolume += volume;
 
-  if (!exercises[name]) exercises[name] = { category: session.categories[0] || '기타', target: "전신", fav: false, img1: safeImg1, img2: safeImg2, history: [] };
+  if (!exercises[name]) exercises[name] = { category: session.categories[0] || '기타', target: "전신", fav: false, img1: "", img2: "", history: [] };
   exercises[name].history.push({ date: session.date, timestamp: session.timestamp, weight: weight, reps: reps, sets: sets, volume: volume });
 
   localStorage.setItem('pr_sessions', JSON.stringify(sessions)); localStorage.setItem('pr_exercises', JSON.stringify(exercises));
@@ -401,15 +415,20 @@ function addCustomExercise() {
   const name = document.getElementById('custom-ex-name').value.trim().toUpperCase();
   const cat = document.getElementById('custom-ex-cat').value;
   const target = document.getElementById('custom-ex-target').value.trim();
+  const img1 = document.getElementById('custom-ex-img1').value.trim();
+  const img2 = document.getElementById('custom-ex-img2').value.trim();
 
   if (!name) return alert('종목 이름을 입력해주세요.');
   const exercises = JSON.parse(localStorage.getItem('pr_exercises'));
   if (exercises[name]) return alert('이미 존재하는 종목입니다.');
 
-  exercises[name] = { category: cat, target: target || cat, fav: false, img1: safeImg1, img2: safeImg2, history: [] };
+  // 사용자가 URL을 넣었으면 그걸 쓰고, 아니면 빈칸으로 둬서 렌더링 시 자동 생성되게 함
+  exercises[name] = { category: cat, target: target || cat, fav: false, img1: img1, img2: img2, history: [] };
   localStorage.setItem('pr_exercises', JSON.stringify(exercises)); alert(`[${name}] 종목 추가 완료!`);
   
-  document.getElementById('custom-ex-name').value = ''; document.getElementById('custom-ex-target').value = ''; toggleCustomExerciseForm();
+  document.getElementById('custom-ex-name').value = ''; document.getElementById('custom-ex-target').value = ''; 
+  document.getElementById('custom-ex-img1').value = ''; document.getElementById('custom-ex-img2').value = '';
+  toggleCustomExerciseForm();
   document.querySelectorAll('#filter-categories .cat-btn').forEach(btn => { if(btn.innerText === cat) filterByCategory(cat, btn); });
 }
 
