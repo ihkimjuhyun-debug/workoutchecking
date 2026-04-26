@@ -1,8 +1,4 @@
-:root {
-  --bg-dark: #121212; --panel-bg: #1e1e1e; --text-main: #ffffff; --text-muted: #aaaaaa;
-  --primary: #ff8c00; --primary-hover: #e07b00; --glow-red: rgba(255, 69, 0, 0.4); --glow-yellow: rgba(255, 215, 0, 0.4);
-}
-
+:root { --bg-dark: #121212; --panel-bg: #1e1e1e; --text-main: #ffffff; --text-muted: #aaaaaa; --primary: #ff8c00; --primary-hover: #e07b00; }
 * { box-sizing: border-box; font-family: 'Pretendard', sans-serif; margin: 0; padding: 0; }
 body { background-color: var(--bg-dark); color: var(--text-main); line-height: 1.6; }
 .app-container { max-width: 600px; margin: 0 auto; padding: 20px; padding-top: 0; }
@@ -10,7 +6,7 @@ body { background-color: var(--bg-dark); color: var(--text-main); line-height: 1
 
 header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 15px 0; position: sticky; top: 0; z-index: 100; background: rgba(18, 18, 18, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 header h1 { color: var(--primary); cursor: pointer; font-size: 1.5rem; letter-spacing: -0.5px; }
-nav button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-weight: bold; margin-left: 15px; font-size: 0.95rem; transition: color 0.2s; }
+nav button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-weight: bold; margin-left: 10px; font-size: 0.9rem; transition: color 0.2s; }
 nav button:hover { color: var(--text-main); }
 
 .view-section { display: none; animation: fadeIn 0.3s ease-in-out; }
@@ -18,72 +14,59 @@ nav button:hover { color: var(--text-main); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 .category-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-.cat-btn { flex: 1 1 calc(33.333% - 10px); background-color: #2a2a2a; padding: 15px 0; text-align: center; border-radius: 10px; cursor: pointer; font-weight: bold; border: 2px solid transparent; transition: all 0.2s ease; user-select: none; }
-.cat-btn:hover { background-color: #333; }
-.cat-btn.selected { border-color: var(--primary); background-color: rgba(255, 140, 0, 0.1); color: var(--primary); }
-.cat-btn.active-filter { border-color: var(--primary); background-color: rgba(255, 140, 0, 0.15); color: var(--primary); box-shadow: 0 0 10px rgba(255, 140, 0, 0.3); transform: translateY(-2px); }
+.cat-btn { flex: 1 1 calc(33.333% - 10px); background-color: #2a2a2a; padding: 15px 0; text-align: center; border-radius: 10px; cursor: pointer; font-weight: bold; border: 2px solid transparent; transition: all 0.2s; user-select: none; }
+.cat-btn.selected, .cat-btn.active-filter { border-color: var(--primary); background-color: rgba(255, 140, 0, 0.15); color: var(--primary); }
 
 .input-group { display: flex; flex-direction: column; width: 100%; margin-bottom: 12px; }
 .input-row { display: flex; gap: 10px; width: 100%; }
 .input-row .input-group { flex: 1 1 0; min-width: 0; margin-bottom: 0; } 
 label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
-input, .custom-select { background: #121212; border: 1px solid #444; color: white; padding: 12px 10px; border-radius: 8px; font-size: 1rem; outline: none; transition: border 0.2s; width: 100%; min-width: 0; }
+input, .custom-select { background: #121212; border: 1px solid #444; color: white; padding: 12px 10px; border-radius: 8px; font-size: 1rem; outline: none; width: 100%; }
 input:focus, .custom-select:focus { border-color: var(--primary); }
 input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
 
-.exercise-entry { background: var(--panel-bg); padding: 20px; border-radius: 12px; border: 1px solid #333; position: relative; width: 100%; transition: box-shadow 0.3s; }
-.remove-btn { position: absolute; right: 15px; top: 15px; background-color: transparent; color: #ff4a4a; border: 1px solid #ff4a4a; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: all 0.2s; }
-.remove-btn:hover { background-color: #ff4a4a; color: white; }
-
-.primary-btn, .secondary-btn { width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; border: none; transition: all 0.2s; }
+.primary-btn, .secondary-btn { width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; border: none; transition: 0.2s; }
 .primary-btn { background-color: var(--primary); color: white; box-shadow: 0 4px 10px rgba(255, 140, 0, 0.2); }
 .primary-btn:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
 .secondary-btn { background-color: #333; color: white; border: 1px solid #444; }
-.secondary-btn:hover { background-color: #444; }
 
 .hof-tabs { display: flex; gap: 8px; width: 100%; background: #1a1a1a; padding: 6px; border-radius: 12px; }
-.hof-tab { flex: 1; padding: 12px; background: transparent; border: none; color: #777; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s; font-size: 0.95rem; }
-.hof-tab.active { background: #333; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 1px solid #444; }
+.hof-tab { flex: 1; padding: 12px; background: transparent; border: none; color: #777; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 0.95rem; }
+.hof-tab.active { background: #333; color: white; border: 1px solid #444; }
 
 .list-container { display: flex; flex-direction: column; gap: 12px; }
-.record-card { background: var(--panel-bg); padding: 18px; border-radius: 12px; border: 1px solid #333; cursor: pointer; transition: all 0.2s; }
-.record-card:hover { transform: translateY(-2px); border-color: #555; background: #242424; }
+.record-card { background: var(--panel-bg); padding: 18px; border-radius: 12px; border: 1px solid #333; cursor: pointer; transition: 0.2s; }
+.record-card:hover { transform: translateY(-2px); border-color: #555; }
 
-.volume-badge { background: rgba(255, 140, 0, 0.15); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: 800; float: right; font-size: 0.9rem; }
-.highlight-red { border: 1px solid rgba(255, 69, 0, 0.6); box-shadow: 0 0 15px var(--glow-red), inset 0 0 10px rgba(255, 69, 0, 0.1); }
-.highlight-yellow { border: 1px solid rgba(255, 215, 0, 0.6); box-shadow: 0 0 15px var(--glow-yellow), inset 0 0 10px rgba(255, 215, 0, 0.1); }
-.history-legend { font-size: 0.85rem; display: flex; gap: 15px; font-weight: bold; }
-.legend-red { color: #ff4a4a; } .legend-yellow { color: #ffd700; }
+.ex-card-layout { display: flex; gap: 12px; align-items: center; background: #2a2a2a; padding: 12px; border-radius: 10px; border: 1px solid #444; position: relative; cursor: pointer; }
 
-/* 🔥 에러율 0% 순수 CSS 낱말 카드 레이아웃 */
-.ex-card-layout { display: flex; gap: 12px; align-items: center; background: #2a2a2a; padding: 12px; border-radius: 10px; border: 1px solid #444; position: relative; transition: all 0.2s; cursor: pointer; }
-.ex-card-layout:hover { border-color: var(--primary); background: #333; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(255,140,0,0.15); }
+/* 🔥 아바타가 이미지를 담을 수 있도록 수정 */
+.ex-avatar { width: 44px; height: 44px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: 900; color: #ddd; background-color: #333; border: 1px solid #444; flex-shrink: 0; overflow: hidden; }
+.ex-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-/* 사진 대신 들어가는 직관적인 글자 아바타 */
-.ex-avatar { width: 44px; height: 44px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: 900; color: white; flex-shrink: 0; font-size: 0.9rem; border: 1px solid rgba(255,255,255,0.2); text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+.ex-card-right { flex: 1; min-width: 0; }
+.ex-title { font-weight: bold; color: #fff; }
 
-.ex-card-right { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-.ex-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 6px; }
-.ex-title { flex: 1; font-size: 1rem; font-weight: bold; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+.quick-card-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; }
+.quick-card-container .ex-card-layout { min-width: 200px; flex: 0 0 auto; }
 
-.ex-icons { display: flex; gap: 10px; flex-shrink: 0; align-items: center; }
-.action-icon { cursor: pointer; transition: transform 0.2s; font-size: 1.1rem; user-select: none; }
-.action-icon:hover { transform: scale(1.2); }
-.icon-fav { filter: grayscale(100%) opacity(0.5); }
-.icon-fav.active { filter: grayscale(0%) opacity(1) drop-shadow(0 0 5px rgba(255,215,0,0.6)); }
-.icon-trash { filter: grayscale(100%) opacity(0.5); }
-.icon-trash:hover { filter: grayscale(0%) opacity(1); }
+.ai-routine-card { background: #222; border: 2px solid transparent; padding: 15px; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.ai-routine-card.selected { border-color: var(--primary); background: rgba(255,140,0,0.1); }
+.ai-routine-title { font-size: 1.1rem; font-weight: bold; color: var(--primary); margin-bottom: 5px; }
+.ai-routine-desc { font-size: 0.85rem; color: #ccc; line-height: 1.4; }
 
-.ex-target { display: inline-block; width: fit-content; }
-.target-badge { background: rgba(255, 140, 0, 0.15); color: var(--primary); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; white-space: nowrap; }
+.progress-bg { width: 100%; height: 12px; background: #333; border-radius: 6px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
 
-.quick-card-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: thin; scrollbar-color: var(--primary) #1e1e1e; min-height: 85px; width: 100%; }
-.quick-card-container::-webkit-scrollbar { height: 6px; }
-.quick-card-container::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
-.quick-card-container .ex-card-layout { min-width: 200px; max-width: 240px; flex: 0 0 auto; }
-
-/* 세션 상세 기록 내부 아이템 버튼 (수정/삭제) */
-.workout-item-actions { display: flex; gap: 8px; }
-.sm-btn { padding: 6px 10px; border-radius: 6px; border: none; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
-.btn-edit { background: #444; color: #fff; } .btn-edit:hover { background: #555; }
-.btn-delete { background: rgba(255, 74, 74, 0.2); color: #ff4a4a; border: 1px solid rgba(255, 74, 74, 0.4); } .btn-delete:hover { background: #ff4a4a; color: white; }
+.session-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #2a2a2a; border-radius: 8px; border-left: 4px solid #444; margin-bottom: 8px; }
+.session-item.done { border-left-color: #4CAF50; opacity: 0.6; }
+.session-item.done .session-name { text-decoration: line-through; color: #888; }
+.session-name { font-weight: bold; font-size: 1rem; margin-bottom: 4px; }
+.session-date { font-size: 0.8rem; color: #aaa; }
+.check-btn { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+.check-btn:hover { background: var(--primary); color: white; }
+.check-btn.done-btn { background: #4CAF50; border-color: #4CAF50; color: white; cursor: default; }
+.toast { visibility: hidden; min-width: 250px; background-color: #4CAF50; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.5s, bottom 0.5s; }
+.toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+.loader { border: 4px solid #333; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
