@@ -46,7 +46,7 @@ async function callOpenAI(type, bodyData) {
   return data;
 }
 
-// 🔥 루틴 생성 (현실적 체중 & 훈련 세션 수 강제)
+// 🔥 루틴 생성 (정확한 중량[kg] 숫자 강제 및 AI 꼼수 완벽 차단)
 async function generateAIRoutines() {
   const name = document.getElementById('goal-name').value.trim();
   const tw = document.getElementById('goal-target-weight').value;
@@ -61,18 +61,21 @@ async function generateAIRoutines() {
   document.getElementById('ai-loading').style.display = 'block';
   document.getElementById('ai-routines-area').style.display = 'none';
 
-  // 🔥 주 2.5회 기준(월 10회)으로 훈련 횟수 강제 계산 (3개월이면 30개 세션)
-  const targetSessionCount = dur * 10; 
+  const targetSessionCount = dur * 10; // 3개월 기준 30개 세션 강제
 
+  // 🔥 프롬프트 초강화: 구체적인 '숫자(kg)'를 무조건 쓰도록 협박(?) 수준으로 강제
   const systemPrompt = `당신은 세계 최고의 스트렝스 코치(파워리프팅 엘리트)입니다.
 사용자 상태: 현재 ${name} ${cw}kg ${cr}회 가능 -> 목표: ${tw}kg ${tr}회 도달.
 
 [치명적 오류 방지 규칙 - 반드시 지킬 것]
-1. 현실적인 체중 계산: ${name} ${tw}kg를 수행하려면 체중 대비 근력 비율(Wilks 등)을 고려할 때 현실적으로 필요한 체급이 있습니다. 130kg OHP 같은 엘리트 중량에 72kg 같은 비현실적인 체중을 추천하지 마세요. 수행 능력을 받쳐줄 수 있는 묵직하고 현실적인 골격근량과 목표 체중(예: 90kg~105kg 이상)을 설정하세요.
-2. 훈련 세션 수 강제: 절대로 한 달에 1~2번 훈련하는 요약본을 짜지 마세요. 주 2.5회 훈련 빈도를 기준으로, ${dur}개월간 **정확히 ${targetSessionCount}개의 훈련 세션**을 JSON 배열에 하나도 빠짐없이 꽉 채워서 생성하세요.
-3. 필수 보조 운동: 메인 운동 1개와 함께 등, 후면 사슬, 코어 등의 필수 보조 운동 2~3개를 훈련(detail)에 반드시 포함하세요.
-4. 영양: 하루 6끼(끼니당 단백질 40g/탄수 80g) 섭취를 기준으로 현실적인 총 칼로리와 매크로를 한국어로 작성하세요.
-5. 언어 강제: 모든 텍스트는 100% 한국어로만 작성하세요. 영어 절대 금지.
+1. 정확한 중량(kg) 명시 강제 (가장 중요): "라이트 데드리프트", "헤비 데드리프트", "적당한 무게", "가벼운 무게" 같은 두루뭉술한 표현은 절대 금지합니다. 모든 훈련(메인 및 보조 운동 모두)의 detail에는 사용자의 1RM을 기반으로 계산된 **정확한 숫자(kg)**가 반드시 포함되어야 합니다. 
+   - [올바른 예시]: "데드리프트 240kg 5회 3세트, 펜들레이 로우 120kg 8회 4세트"
+   - [금지된 예시]: "라이트 데드리프트 5회 3세트, 무거운 로우 8회 4세트"
+2. 현실적인 체중 계산: ${name} ${tw}kg를 수행하려면 체중 대비 근력 비율(Wilks 등)을 고려하여 비현실적인 체중을 추천하지 마세요. 수행 능력을 받쳐줄 수 있는 묵직하고 현실적인 골격근량과 목표 체중(예: 90kg~105kg 이상)을 설정하세요.
+3. 훈련 세션 수 강제: 주 2.5회 훈련 빈도를 기준으로, ${dur}개월간 **정확히 ${targetSessionCount}개의 훈련 세션**을 JSON 배열에 하나도 빠짐없이 꽉 채워서 생성하세요.
+4. 필수 보조 운동: 메인 운동 1개와 함께 등, 후면 사슬, 코어 등의 필수 보조 운동 2~3개를 구체적인 중량(kg)과 함께 훈련(detail)에 반드시 포함하세요.
+5. 영양: 하루 6끼(끼니당 단백질 40g/탄수 80g) 섭취를 기준으로 현실적인 총 칼로리와 매크로를 한국어로 작성하세요.
+6. 언어 강제: 모든 텍스트는 100% 한국어로만 작성하세요. 영어 절대 금지.
 
 JSON 구조:
 {
@@ -83,7 +86,7 @@ JSON 구조:
       "title": "루틴 명칭",
       "desc": "루틴 개요",
       "sessions": [
-        { "title": "훈련 구분(예: 1주차 1번째 고강도)", "detail": "운동 리스트(종목/무게/회/세트)", "rationale": "보조 운동 포함 생리학적 근거" }
+        { "title": "훈련 구분(예: 1주차 1번째 고강도)", "detail": "운동 리스트(종목/무게kg/회/세트 - 구체적인 숫자 필수!)", "rationale": "보조 운동 포함 생리학적 근거" }
       ]
     }
   ]
@@ -94,7 +97,7 @@ JSON 구조:
       model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt }, 
-        { role: "user", content: `${name} 목표 달성을 위해 정확히 ${targetSessionCount}개의 개별 세션이 포함된 루틴을 생성해.` }
+        { role: "user", content: `${name} 목표 달성을 위해 구체적인 'kg 무게 숫자'가 모두 포함된 정확히 ${targetSessionCount}개의 세션 루틴을 생성해.` }
       ],
       response_format: { type: "json_object" }
     });
@@ -145,7 +148,6 @@ function startSelectedRoutine() {
   const endDate = new Date();
   endDate.setMonth(endDate.getMonth() + dur);
   
-  // 훈련 간격 자동 계산 (정확한 날짜 할당)
   const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
   const interval = totalDays / (totalSessions - 1 || 1);
 
@@ -300,7 +302,7 @@ function renderHallOfFame() {
   });
 }
 
-// 통합 검색 및 커스텀 종목 (생략 없이 유지)
+// 통합 검색 및 커스텀 종목
 function searchExercises() {
   const filterCat = document.querySelector('#filter-categories .cat-btn.active-filter')?.dataset.filter;
   const exercises = JSON.parse(localStorage.getItem('pr_exercises'));
