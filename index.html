@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elite PR Tracker v8.0 (Ultimate Vercel AI Edition)</title>
+  <title>Elite PR Tracker v8.5 (Ultimate Vercel AI Edition)</title>
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <link rel="stylesheet" href="style.css">
 </head>
@@ -121,19 +121,35 @@
       <div id="goal-setup-area">
         <h2 class="mb-20">🎯 AI 디테일 루틴 설계</h2>
         <div class="record-card mb-20" style="border-color: var(--primary);">
-          <div class="input-group"><label>목표 종목 및 무게</label><input type="text" id="goal-target" placeholder="예: 겟업 48kg"></div>
-          <div class="input-group"><label>현재 기록</label><input type="text" id="goal-current" placeholder="예: 겟업 40kg"></div>
+          
+          <div class="input-group">
+            <label>목표 종목명</label>
+            <input type="text" id="goal-name" placeholder="예: OHP, 겟업, 데드리프트">
+          </div>
+          
+          <label>🎯 최종 목표</label>
+          <div class="input-row mb-10">
+            <input type="number" id="goal-target-weight" placeholder="무게 (kg)">
+            <input type="number" id="goal-target-reps" placeholder="횟수 (회)">
+          </div>
+
+          <label>🔥 현재 최대 기록 (1RM 산출용)</label>
+          <div class="input-row mb-10">
+            <input type="number" id="goal-current-weight" placeholder="가능 무게 (kg)">
+            <input type="number" id="goal-current-reps" placeholder="가능 횟수 (회)">
+          </div>
+
           <div class="input-group">
             <label>달성 기간</label>
             <select id="goal-duration" class="custom-select">
               <option value="1">1개월</option><option value="3" selected>3개월</option><option value="6">6개월</option><option value="12">12개월</option>
             </select>
           </div>
-          <button class="primary-btn mt-20" onclick="generateAIRoutines()" id="btn-generate">✨ GPT-4o 맞춤 루틴 생성하기</button>
+          <button class="primary-btn mt-20" onclick="generateAIRoutines()" id="btn-generate">✨ 1RM 기반 맞춤 루틴 생성하기</button>
         </div>
         
         <div id="ai-loading" style="display: none; text-align: center; padding: 20px; color: var(--primary);">
-          <p class="mb-10" id="ai-loading-text">🧠 AI가 주기화와 신경계 회복을 고려하여 계산 중입니다...</p>
+          <p class="mb-10" id="ai-loading-text">🧠 AI가 1RM 추정치와 신경계 회복을 고려하여 계산 중입니다...</p>
           <div class="loader"></div>
         </div>
         
