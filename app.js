@@ -116,7 +116,7 @@ function toggleCustomExerciseForm() { const form = document.getElementById('cust
 
 
 // ------------------------------------------------------------------------
-// 🚀 AI 루틴 & 목표 설정 (🔥 초고도화된 프롬프트 엔진)
+// 🚀 AI 루틴 & 목표 설정 (🔥 파싱 버그 완벽 수정 및 프롬프트 동기화)
 // ------------------------------------------------------------------------
 let generatedRoutinesTemp = [];
 let selectedRoutineIndex = null;
@@ -130,7 +130,7 @@ async function generateAIRoutines() {
   document.getElementById('btn-generate').style.display = 'none';
   document.getElementById('ai-loading').style.display = 'block';
 
-  // 🔥 20년차 역도/파워리프팅/SFG 코치의 뇌를 이식한 극한의 프롬프트
+  // 🔥 프롬프트 수정: JSON Object 강제 규격 확립
   const systemPrompt = `You are a Master SFG and Elite Powerlifting Coach with 20 years of experience.
 Your job is to generate 3 specialized workout routines to take the user from their CURRENT performance to their TARGET performance over the specified duration.
 
@@ -144,21 +144,23 @@ CRITICAL RULES FOR RATIONALE (코치 코멘트):
 3. ANTAGONIST SYNERGY: If you program Pulling exercises (Rows, Pull-ups) for a Pressing goal, explicitly explain WHY. (e.g., "등 상부와 광배근은 프레스의 발사대(Platform) 역할을 합니다. 강력한 로우 운동은 길항근을 수축시켜 어깨 관절의 안정성을 극대화하고 방산(Irradiation) 효과를 일으켜 프레스 중량을 올립니다.")
 4. NEURAL ADAPTATION: Explain heavy sets as "CNS(중추신경계) 적응 및 고역치 운동단위 동원".
 
-JSON Format MUST be EXACTLY:
-[
-  {
-    "title": "1. SFG & Peaking Program", 
-    "desc": "StrongFirst 기반의 신경계 동원 및 절대근력 피킹 프로그램", 
-    "sessions": [
-      {
-        "title": "Week 1 (Volume)", 
-        "detail": "Kettlebell Press 40kg 5x5, Heavy Bent Over Row 40kg 4x8", 
-        "rationale": "프레스 중량을 올리기 위해 광배근을 두껍게 만들어 안정적인 발사대를 구축합니다. 길항근의 성장은 프레스 하강 구간의 통제력을 높입니다."
-      },
-      ... (Generate 8 to 12 realistic, progressive sessions. The final session MUST reach or heavily overload near the TARGET weight)
-    ]
-  }
-]`;
+JSON Format MUST be EXACTLY an object with a "routines" array key:
+{
+  "routines": [
+    {
+      "title": "1. SFG & Peaking Program", 
+      "desc": "StrongFirst 기반의 신경계 동원 및 절대근력 피킹 프로그램", 
+      "sessions": [
+        {
+          "title": "Week 1 (Volume)", 
+          "detail": "Kettlebell Press 40kg 5x5, Heavy Bent Over Row 40kg 4x8", 
+          "rationale": "프레스 중량을 올리기 위해 광배근을 두껍게 만들어 안정적인 발사대를 구축합니다. 길항근의 성장은 프레스 하강 구간의 통제력을 높입니다."
+        }
+      ]
+    }
+  ]
+}
+Generate 8 to 12 realistic, progressive sessions per routine. The final session MUST reach or heavily overload near the TARGET weight.`;
 
   try {
     const data = await callOpenAI('chat', {
@@ -169,8 +171,28 @@ JSON Format MUST be EXACTLY:
 
     if (data.error) throw new Error(data.error.message);
     let rawContent = data.choices[0].message.content.replace(/```json/g, '').replace(/```/g, '').trim();
-    const resultObj = JSON.parse(rawContent);
-    generatedRoutinesTemp = Array.isArray(resultObj) ? resultObj : (resultObj.routines || Object.values(resultObj)[0]);
+    const parsedData = JSON.parse(rawContent);
+
+    // 🔥 무적의 배열 추출 로직 (.map is not a function 버그 차단)
+    if (Array.isArray(parsedData)) {
+      generatedRoutinesTemp = parsedData;
+    } else if (parsedData.routines && Array.isArray(parsedData.routines)) {
+      generatedRoutinesTemp = parsedData.routines;
+    } else {
+      // 객체 안에 배열이 숨어있는 경우 찾아서 추출
+      const arrays = Object.values(parsedData).filter(val => Array.isArray(val));
+      if (arrays.length > 0) {
+        generatedRoutinesTemp = arrays[0];
+      } else {
+        // 단일 객체만 온 경우 배열로 감싸기
+        generatedRoutinesTemp = [parsedData];
+      }
+    }
+
+    // 최종 안전망 점검
+    if (!Array.isArray(generatedRoutinesTemp) || typeof generatedRoutinesTemp.map !== 'function') {
+      throw new Error("AI가 반환한 데이터 형식이 배열이 아닙니다.");
+    }
 
     document.getElementById('ai-loading').style.display = 'none';
     document.getElementById('ai-routines-area').style.display = 'block';
@@ -179,7 +201,7 @@ JSON Format MUST be EXACTLY:
       <div class="ai-routine-card" id="routine-card-${i}" onclick="selectRoutine(${i})">
         <div class="ai-routine-title">${r.title}</div>
         <div class="ai-routine-desc">${r.desc}</div>
-        <div style="margin-top:10px; font-size:0.8rem; color:var(--primary);">세부 훈련: 총 ${r.sessions.length}개 세션 (피킹 포함)</div>
+        <div style="margin-top:10px; font-size:0.8rem; color:var(--primary);">세부 훈련: 총 ${r.sessions ? r.sessions.length : 0}개 세션 (피킹 포함)</div>
       </div>`).join('');
   } catch (err) {
     alert("API 호출 오류: " + err.message);
@@ -201,6 +223,10 @@ function startSelectedRoutine() {
   const months = parseInt(document.getElementById('goal-duration').value); 
   const routine = generatedRoutinesTemp[selectedRoutineIndex];
   
+  if (!routine.sessions || !Array.isArray(routine.sessions)) {
+    return alert("해당 루틴에 세션 데이터가 없습니다. 다시 생성해주세요.");
+  }
+
   let sessions = [], startDate = new Date(), endDate = new Date(); 
   endDate.setMonth(endDate.getMonth() + months);
   
@@ -212,9 +238,9 @@ function startSelectedRoutine() {
     sessions.push({ 
       id: i, 
       date: `${sDate.getFullYear()}.${String(sDate.getMonth()+1).padStart(2,'0')}.${String(sDate.getDate()).padStart(2,'0')}`, 
-      title: routine.sessions[i].title, 
-      detail: routine.sessions[i].detail, 
-      rationale: routine.sessions[i].rationale,
+      title: routine.sessions[i].title || `Day ${i+1}`, 
+      detail: routine.sessions[i].detail || "상세 훈련 내용이 없습니다.", 
+      rationale: routine.sessions[i].rationale || "점진적 과부하를 위한 세션입니다.",
       done: false 
     });
   }
