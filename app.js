@@ -16,7 +16,7 @@ function toggleCategory(cat, btnElement) {
 
 function getAvatarHtml(name, b64ImgData) {
   if (b64ImgData) {
-    return `<div class="ex-avatar"><img src="data:image/png;base64,${b64ImgData}" alt="icon"></div>`;
+    return `<div class="ex-avatar"><img src="data:image/png;base64,${b64ImgData}" alt="icon" style="width:100%; height:100%; object-fit:cover;"></div>`;
   }
   return `<div class="ex-avatar">${name.substring(0, 2).toUpperCase()}</div>`;
 }
@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
   checkActiveGoal();
   document.getElementById('openai-key').value = localStorage.getItem('pr_openai_key') || '';
 
-  // 통합 검색용 필터 버튼 리스너
   document.querySelectorAll('#filter-categories .cat-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       const isActive = this.classList.contains('active-filter');
@@ -110,7 +109,6 @@ function addCustomExercise() {
 
   exercises[name] = { category: cat, target: target || cat, fav: false, b64_img: pendingDalleB64, history: [] };
   localStorage.setItem('pr_exercises', JSON.stringify(exercises)); alert(`[${name}] 추가 완료!`);
-  
   document.getElementById('custom-ex-name').value = ''; document.getElementById('custom-ex-target').value = ''; document.getElementById('ai-img-preview').style.display = 'none'; pendingDalleB64 = "";
   document.getElementById('custom-exercise-form').style.display = 'none'; searchExercises();
 }
@@ -118,7 +116,7 @@ function toggleCustomExerciseForm() { const form = document.getElementById('cust
 
 
 // ------------------------------------------------------------------------
-// 🚀 AI 루틴 & 목표 설정 (Hallucination 통제 및 Rationale 추출)
+// 🚀 AI 루틴 & 목표 설정 (🔥 초고도화된 프롬프트 엔진)
 // ------------------------------------------------------------------------
 let generatedRoutinesTemp = [];
 let selectedRoutineIndex = null;
@@ -132,27 +130,35 @@ async function generateAIRoutines() {
   document.getElementById('btn-generate').style.display = 'none';
   document.getElementById('ai-loading').style.display = 'block';
 
-  // 🔥 프롬프트 초강화: 환각(복싱 등) 금지, 파워리프팅/SFG 원칙 강제, 한국어 사유(rationale) 강제
-  const systemPrompt = `You are a world-class strength coach (SFG, Westside Barbell specialized).
-Generate exactly 3 workout routines for the user's goal as a JSON array.
-CRITICAL: NEVER include irrelevant cardio like shadow boxing, soccer, or random sports. Only focus on progressive overload, compound lifts, kettlebell strength, and strict CNS recovery.
+  // 🔥 20년차 역도/파워리프팅/SFG 코치의 뇌를 이식한 극한의 프롬프트
+  const systemPrompt = `You are a Master SFG and Elite Powerlifting Coach with 20 years of experience.
+Your job is to generate 3 specialized workout routines to take the user from their CURRENT performance to their TARGET performance over the specified duration.
 
-Format MUST be exactly:
+CRITICAL RULES FOR PROGRESSION:
+1. PEAKING IS MANDATORY: The user MUST mathematically and physically reach or attempt the TARGET weight in the final sessions. If the goal is 60kg, the final weeks MUST contain 56kg or 60kg (e.g., Heavy Singles, Push Press, or Overload holds). DO NOT stay at light weights.
+2. Progressive Overload: Start with Accumulation (Volume), move to Intensification (Heavy weights, lower reps), and end with Peaking (Near TARGET weight).
+
+CRITICAL RULES FOR RATIONALE (코치 코멘트):
+1. Must be written in highly professional, biomechanical Korean.
+2. NO GENERIC BULLSHIT. Do not write "근지구력 향상" or "안정적인 볼륨".
+3. ANTAGONIST SYNERGY: If you program Pulling exercises (Rows, Pull-ups) for a Pressing goal, explicitly explain WHY. (e.g., "등 상부와 광배근은 프레스의 발사대(Platform) 역할을 합니다. 강력한 로우 운동은 길항근을 수축시켜 어깨 관절의 안정성을 극대화하고 방산(Irradiation) 효과를 일으켜 프레스 중량을 올립니다.")
+4. NEURAL ADAPTATION: Explain heavy sets as "CNS(중추신경계) 적응 및 고역치 운동단위 동원".
+
+JSON Format MUST be EXACTLY:
 [
   {
-    "title": "Routine Title", 
-    "desc": "Short description", 
+    "title": "1. SFG & Peaking Program", 
+    "desc": "StrongFirst 기반의 신경계 동원 및 절대근력 피킹 프로그램", 
     "sessions": [
       {
-        "title": "Day 1: Accummulation", 
-        "detail": "OHP 40kg 5x5, Pull-ups 3x8", 
-        "rationale": "볼륨 훈련을 통해 근신경계를 활성화하고 작업 수용력을 기르는 과정입니다."
-      }
+        "title": "Week 1 (Volume)", 
+        "detail": "Kettlebell Press 40kg 5x5, Heavy Bent Over Row 40kg 4x8", 
+        "rationale": "프레스 중량을 올리기 위해 광배근을 두껍게 만들어 안정적인 발사대를 구축합니다. 길항근의 성장은 프레스 하강 구간의 통제력을 높입니다."
+      },
+      ... (Generate 8 to 12 realistic, progressive sessions. The final session MUST reach or heavily overload near the TARGET weight)
     ]
   }
-]
-- The 'rationale' MUST be in Korean and explain the physiological/biomechanical reason (e.g., Deloading, CNS recovery, hypertrophy, peaking) for the specific 'detail'.
-- Generate exactly 8-12 progressive sessions for each routine.`;
+]`;
 
   try {
     const data = await callOpenAI('chat', {
@@ -173,22 +179,12 @@ Format MUST be exactly:
       <div class="ai-routine-card" id="routine-card-${i}" onclick="selectRoutine(${i})">
         <div class="ai-routine-title">${r.title}</div>
         <div class="ai-routine-desc">${r.desc}</div>
-        <div style="margin-top:10px; font-size:0.8rem; color:var(--primary);">세부 훈련: 총 ${r.sessions.length}개 세션 설계됨</div>
+        <div style="margin-top:10px; font-size:0.8rem; color:var(--primary);">세부 훈련: 총 ${r.sessions.length}개 세션 (피킹 포함)</div>
       </div>`).join('');
   } catch (err) {
-    alert("API 호출 오류: " + err.message + "\n(임시 개발용 데이터로 렌더링합니다.)");
-    generatedRoutinesTemp = [{ 
-      title: "1. 스트렝스 주기화 템플릿", 
-      desc: "API 오류로 생성된 오프라인 예비 템플릿입니다.", 
-      sessions: Array.from({length: months * 4}, (_, i) => ({
-        title: `주차별 훈련 (Day ${i+1})`,
-        detail: `본운동: ${target.split(' ')[0]} ${current} 베이스 + ${i}kg 증량 시도\n보조운동: 케틀벨 스윙 10x10`,
-        rationale: "점진적 과부하 원칙에 따라 이전 세션 대비 점진적으로 중량을 늘려나가며, 신경계를 자극하는 구성입니다."
-      }))
-    }];
-    document.getElementById('ai-loading').style.display = 'none'; 
-    document.getElementById('ai-routines-area').style.display = 'block';
-    document.getElementById('ai-routines-list').innerHTML = `<div class="ai-routine-card" id="routine-card-0" onclick="selectRoutine(0)"><div class="ai-routine-title">임시 루틴</div><div class="ai-routine-desc">오프라인 모드 데이터.</div><div style="margin-top:10px; font-size:0.8rem; color:var(--primary);">총 ${months * 4}개 세션</div></div>`;
+    alert("API 호출 오류: " + err.message);
+    document.getElementById('btn-generate').style.display = 'block';
+    document.getElementById('ai-loading').style.display = 'none';
   }
 }
 
@@ -218,7 +214,7 @@ function startSelectedRoutine() {
       date: `${sDate.getFullYear()}.${String(sDate.getMonth()+1).padStart(2,'0')}.${String(sDate.getDate()).padStart(2,'0')}`, 
       title: routine.sessions[i].title, 
       detail: routine.sessions[i].detail, 
-      rationale: routine.sessions[i].rationale || "점진적 과부하를 위한 세션입니다.",
+      rationale: routine.sessions[i].rationale,
       done: false 
     });
   }
@@ -267,7 +263,7 @@ function renderActiveGoal(goal) {
         
         <button class="btn-rationale" onclick="toggleRationale(${idx})">왜 이렇게 운동하나요? (AI 분석)</button>
         <div id="rationale-${idx}" class="rationale-box">
-           💡 <b>코치 코멘트:</b><br>${s.rationale}
+           💡 <b>전문 코치 분석:</b><br>${s.rationale}
         </div>
 
         <div class="session-date mt-10">${s.done ? s.date + ' 완료됨' : '목표일: ' + s.date}</div>
@@ -290,14 +286,14 @@ function completeGoalSession(idx) {
 }
 
 function resetGoal() { 
-  if(confirm("정말 현재 진행 중인 목표를 삭제하시겠습니까?")) { localStorage.removeItem('pr_active_goal'); checkActiveGoal(); } 
+  if(confirm("정말 현재 진행 중인 목표를 포기하시겠습니까? (이전 훈련 기록도 모두 초기화됩니다)")) { localStorage.removeItem('pr_active_goal'); checkActiveGoal(); } 
 }
 function showToast(msg) { 
   const t = document.getElementById("toast-msg"); t.innerHTML = msg; t.classList.add("show"); setTimeout(() => { t.classList.remove("show"); }, 3500); 
 }
 
 // ------------------------------------------------------------------------
-// 🏃 운동 기록 및 렌더링 (공통)
+// 🏃 공통 운동 기록 및 렌더링 로직
 // ------------------------------------------------------------------------
 function startWorkout() {
   if (selectedCategories.length === 0) return alert('홈 화면에서 부위를 먼저 선택해주세요.');
