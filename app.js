@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
   checkActiveGoal();
   document.getElementById('openai-key').value = localStorage.getItem('pr_openai_key') || '';
   
-  // 카테고리 다중 선택 바인딩
   document.querySelectorAll('#category-selection .cat-btn').forEach(btn => {
     btn.onclick = function() {
       const cat = this.dataset.cat;
@@ -49,7 +48,7 @@ async function callOpenAI(type, bodyData) {
   return data;
 }
 
-// 🔥 루틴 생성 (파싱 버그 차단 및 전문성 강화)
+// 🔥 루틴 생성 (언어 완전 강제 및 영양 섭취 추가)
 async function generateAIRoutines() {
   const name = document.getElementById('goal-name').value.trim();
   const tw = document.getElementById('goal-target-weight').value;
@@ -64,29 +63,45 @@ async function generateAIRoutines() {
   document.getElementById('ai-loading').style.display = 'block';
   document.getElementById('ai-routines-area').style.display = 'none';
 
-  const systemPrompt = `You are a Master Strength Coach (SFG, Powerlifting Elite).
+  // 🔥 100% 한국어 강제 + 보디빌딩 베이스 영양 컨텍스트 추가
+  const systemPrompt = `You are a Master Strength Coach. 
 Analyze 1RM using Epley: Weight * (1 + Reps/30).
 Current: ${cw}kg x ${cr} reps. Target: ${tw}kg x ${tr} reps.
 
 CRITICAL INSTRUCTIONS:
-1. PEAKING: The program MUST scale up to the target weight. Week 1 is accumulation, Week 12 is the final attempt at ${tw}kg.
-2. ANTAGONIST SYNERGY: Explain rationale (e.g. why Rows for Press) using professional Korean biomechanics like "Platform building", "Irradiation", and "Antagonist co-contraction".
-3. FORMAT: Suffix numbers with "회"(reps) and "세트"(sets). Example: "130kg 1회 3세트".
-4. NO GENERIC TERMS: Use specific strength science terms.
+1. LANGUAGE: ALL OUTPUT MUST BE STRICTLY IN KOREAN. NEVER USE ENGLISH for titles, descriptions, details, or rationales. Translate exercise names to Korean (e.g., 'Deadlift' -> '데드리프트').
+2. PEAKING: Program MUST scale up to the target weight. Final session MUST attempt the target load.
+3. RATIONALE: Explain rationale biomechanically (e.g. Platform building, Antagonist co-contraction) in professional Korean.
+4. NUTRITION: Recommend a target body weight and daily nutrition (Calories, Protein, Carbs, Fats) required to hit this strength goal. Base the nutrition around an advanced athlete eating 6 meals a day (typically ~40g Protein, ~80g Carbs per meal).
+5. FORMAT: Suffix ALL numbers with "회"(reps) and "세트"(sets). Example: "130kg 1회 3세트".
 
 Return JSON EXACTLY:
-{"routines": [{"title": "Name", "desc": "Short", "sessions": [{"title": "Week X", "detail": "Exercises here", "rationale": "Deep reason here"}]}]}`;
+{
+  "routines": [
+    {
+      "title": "루틴 이름 (Korean)", 
+      "desc": "설명 (Korean)", 
+      "recommendedWeight": "적절 체중 (예: 85kg)",
+      "nutrition": "식단 가이드 (예: 하루 6끼 기준, 단백질 240g, 탄수 480g 섭취 요망)",
+      "sessions": [
+        {
+          "title": "주차 이름 (Korean)", 
+          "detail": "훈련 내용 (Korean)", 
+          "rationale": "코치 분석 (Korean)"
+        }
+      ]
+    }
+  ]
+}`;
 
   try {
     const data = await callOpenAI('chat', {
       model: "gpt-4o",
-      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: `Generate a ${dur}-month peaking routine for ${name}.` }],
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: `Generate a ${dur}-month peaking routine and diet for ${name}.` }],
       response_format: { type: "json_object" }
     });
 
     const parsed = JSON.parse(data.choices[0].message.content);
-    
-    // 🔥 배열 추출 로직 강화
     generatedRoutinesTemp = parsed.routines || parsed.routine || Object.values(parsed).find(Array.isArray) || [];
 
     if (!Array.isArray(generatedRoutinesTemp) || generatedRoutinesTemp.length === 0) throw new Error("형식이 올바르지 않습니다.");
@@ -95,6 +110,7 @@ Return JSON EXACTLY:
       <div class="ai-routine-card" id="routine-card-${i}" onclick="selectRoutine(${i})">
         <div class="ai-routine-title">${r.title}</div>
         <div class="ai-routine-desc">${r.desc}</div>
+        <div class="mt-10" style="font-size:0.85rem; color:#aaa;"><b>추천 식단:</b> ${r.nutrition}</div>
         <div class="mt-10" style="font-size:0.8rem; color:var(--primary); font-weight:bold;">총 ${r.sessions.length}개 세션 설계</div>
       </div>`).join('');
 
@@ -125,6 +141,8 @@ function startSelectedRoutine() {
   const goalData = {
     title: `${name} ${tw}kg ${tr}회 달성 프로젝트`,
     target: `${tw}kg ${tr}회`,
+    recommendedWeight: routine.recommendedWeight || "AI 분석 중 체중 정보 누락",
+    nutrition: routine.nutrition || "AI 분석 중 영양 정보 누락",
     sessions: routine.sessions.map(s => ({ ...s, done: false })),
     total: routine.sessions.length,
     completed: 0,
@@ -138,6 +156,11 @@ function startSelectedRoutine() {
 function renderActiveGoal(goal) {
   document.getElementById('active-goal-title').innerText = goal.title;
   document.getElementById('active-goal-desc').innerText = `목표: ${goal.target}`;
+  
+  // 🔥 영양 정보 및 권장 체중 렌더링
+  document.getElementById('active-goal-weight').innerText = goal.recommendedWeight;
+  document.getElementById('active-goal-nutrition').innerText = goal.nutrition;
+
   const percent = Math.round((goal.completed / goal.total) * 100);
   document.getElementById('goal-progress-bar').style.width = percent + '%';
   document.getElementById('goal-progress-text').innerText = `${percent}% 완료 (${goal.completed}/${goal.total})`;
@@ -220,3 +243,47 @@ function showToast(m) {
   t.innerText = m; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// 기존 운동 일지 저장 로직(간소화)
+function startWorkout() {
+  if (selectedCategories.length === 0) return alert('부위를 선택해주세요.');
+  document.getElementById('current-categories-title').innerText = `기록 (${selectedCategories.join(', ')})`;
+  document.getElementById('exercise-inputs-container').innerHTML = ''; addExerciseInput(); renderQuickSelectCards(); showView('record-view');
+}
+function addExerciseInput(name = '') {
+  const container = document.getElementById('exercise-inputs-container');
+  const isCardio = name && JSON.parse(localStorage.getItem('pr_exercises'))[name]?.category === '유산소';
+  const div = document.createElement('div'); div.className = 'exercise-entry mb-20'; 
+  div.innerHTML = `<input type="text" class="input-name mb-10" placeholder="종목명" value="${name}"><div class="input-row"><input type="number" class="input-weight" placeholder="${isCardio ? '거리(km)' : '무게(kg)'}"><input type="number" class="input-reps" placeholder="${isCardio ? '시간(분)' : '횟수(회)'}">${isCardio ? '' : '<input type="number" class="input-sets" placeholder="세트">'}</div>`; 
+  container.appendChild(div);
+}
+function renderQuickSelectCards() {
+  const container = document.getElementById('quick-select-container'); container.innerHTML = ''; const exercises = JSON.parse(localStorage.getItem('pr_exercises'));
+  Object.entries(exercises).filter(([_, d]) => selectedCategories.includes(d.category)).forEach(([name, data]) => { 
+    const card = document.createElement('div'); card.className = 'ex-card-layout'; card.onclick = () => { addExerciseInput(name); };
+    card.innerHTML = `<div class="ex-card-left">${getAvatarHtml(name, data.b64_img)}</div><div class="ex-card-right"><div class="ex-header"><span class="ex-title">${name}</span></div><div class="ex-target"><span class="target-badge">${data.target||data.category}</span></div></div>`; 
+    container.appendChild(card);
+  });
+}
+function getAvatarHtml(name, b64) { return b64 ? `<div class="ex-avatar"><img src="data:image/png;base64,${b64}" alt="icon" style="width:100%; height:100%; object-fit:cover;"></div>` : `<div class="ex-avatar">${name.substring(0,2).toUpperCase()}</div>`; }
+function saveRecord(timeType) {
+  const entries = document.querySelectorAll('.exercise-entry'); const sessions = JSON.parse(localStorage.getItem('pr_sessions')); const exercises = JSON.parse(localStorage.getItem('pr_exercises'));
+  let recordDate = timeType === 'past' ? new Date(document.getElementById('input-past-date').value) : new Date();
+  const session = { date: recordDate.toLocaleString(), timestamp: recordDate.getTime(), categories: [...selectedCategories], workouts: [], totalVolume: 0 };
+  entries.forEach(entry => {
+    const name = entry.querySelector('.input-name').value.trim(); const val1 = parseFloat(entry.querySelector('.input-weight').value) || 0; const val2 = parseFloat(entry.querySelector('.input-reps').value) || 0; const sets = entry.querySelector('.input-sets') ? parseInt(entry.querySelector('.input-sets').value) || 0 : 1;
+    if (name) { let volume = val1 * val2 * sets; session.workouts.push({ name, weight: val1, reps: val2, sets, volume }); session.totalVolume += volume; if (!exercises[name]) exercises[name] = { category: "기타", target: "전신", history: [] }; exercises[name].history.push({ date: session.date, timestamp: session.timestamp, name, weight: val1, reps: val2, sets, volume }); }
+  });
+  if(session.workouts.length === 0) return alert("데이터 입력 필요");
+  sessions[`S_${recordDate.getTime()}`] = session; localStorage.setItem('pr_sessions', JSON.stringify(sessions)); localStorage.setItem('pr_exercises', JSON.stringify(exercises)); showView('hof-view');
+}
+function renderHallOfFame() {
+  const sessions = JSON.parse(localStorage.getItem('pr_sessions')); const volList = document.getElementById('hof-volume-list'); volList.innerHTML = '';
+  Object.entries(sessions).sort((a,b) => b[1].totalVolume - a[1].totalVolume).forEach(([key, s], i) => {
+    const div = document.createElement('div'); div.className = 'record-card mb-10';
+    div.innerHTML = `<span class="volume-badge">${s.totalVolume.toLocaleString()}kg</span> <b>${i+1}위</b> | ${s.date.split(' ')[0]}<br><small style="color:#888;">${s.categories.join(', ')}</small>`; volList.appendChild(div);
+  });
+}
+function togglePastDateInput() { const c = document.getElementById('past-date-container'); c.style.display = c.style.display === 'none' ? 'block' : 'none'; }
+function switchHofTab(t) { document.querySelectorAll('#hof-view .hof-tab').forEach(tab => tab.classList.remove('active')); if (t === 'volume') document.querySelectorAll('#hof-view .hof-tab')[0].classList.add('active'); else document.querySelectorAll('#hof-view .hof-tab')[1].classList.add('active'); }
+function searchExercises() { /* 통합검색 유지 */ }
