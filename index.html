@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elite PR Tracker v6.0 (Ultimate Vercel Edition)</title>
+  <title>Elite PR Tracker v8.0 (Ultimate Vercel AI Edition)</title>
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <link rel="stylesheet" href="style.css">
 </head>
@@ -23,14 +23,14 @@
     <div id="home-view" class="view-section active">
       <h2>오늘의 운동 부위 선택</h2>
       <div class="category-grid mt-20" id="category-selection">
-        <div class="cat-btn" data-cat="어깨">어깨</div>
-        <div class="cat-btn" data-cat="등">등</div>
-        <div class="cat-btn" data-cat="가슴">가슴</div>
-        <div class="cat-btn" data-cat="하체">하체</div>
-        <div class="cat-btn" data-cat="팔">팔</div>
-        <div class="cat-btn" data-cat="복근">복근</div>
-        <div class="cat-btn" data-cat="케틀벨">케틀벨</div>
-        <div class="cat-btn" data-cat="유산소">유산소</div>
+        <div class="cat-btn" onclick="toggleCategory('어깨', this)">어깨</div>
+        <div class="cat-btn" onclick="toggleCategory('등', this)">등</div>
+        <div class="cat-btn" onclick="toggleCategory('가슴', this)">가슴</div>
+        <div class="cat-btn" onclick="toggleCategory('하체', this)">하체</div>
+        <div class="cat-btn" onclick="toggleCategory('팔', this)">팔</div>
+        <div class="cat-btn" onclick="toggleCategory('복근', this)">복근</div>
+        <div class="cat-btn" onclick="toggleCategory('케틀벨', this)">케틀벨</div>
+        <div class="cat-btn" onclick="toggleCategory('유산소', this)">유산소</div>
       </div>
       <button class="primary-btn mt-20" onclick="startWorkout()">운동 일지 기록 시작하기</button>
     </div>
@@ -68,14 +68,14 @@
       </div>
       
       <div class="category-grid mb-20" id="filter-categories">
-        <div class="cat-btn" data-filter="어깨">어깨</div><div class="cat-btn" data-filter="등">등</div>
-        <div class="cat-btn" data-filter="가슴">가슴</div><div class="cat-btn" data-filter="하체">하체</div>
-        <div class="cat-btn" data-filter="팔">팔</div><div class="cat-btn" data-filter="복근">복근</div>
-        <div class="cat-btn" data-filter="케틀벨">케틀벨</div><div class="cat-btn" data-filter="유산소">유산소</div>
+        <div class="cat-btn" onclick="filterByCategory('어깨', this)">어깨</div><div class="cat-btn" onclick="filterByCategory('등', this)">등</div>
+        <div class="cat-btn" onclick="filterByCategory('가슴', this)">가슴</div><div class="cat-btn" onclick="filterByCategory('하체', this)">하체</div>
+        <div class="cat-btn" onclick="filterByCategory('팔', this)">팔</div><div class="cat-btn" onclick="filterByCategory('복근', this)">복근</div>
+        <div class="cat-btn" onclick="filterByCategory('케틀벨', this)">케틀벨</div><div class="cat-btn" onclick="filterByCategory('유산소', this)">유산소</div>
       </div>
       
       <div id="search-exercise-area">
-        <input type="text" id="search-input" placeholder="종목 검색..." class="mb-20">
+        <input type="text" id="search-input" placeholder="종목 검색..." class="mb-20" onkeyup="searchExercises()">
         <div id="exercise-list" class="list-container"></div>
         <button class="secondary-btn mt-20 mb-10" onclick="toggleCustomExerciseForm()">➕ 맞춤 종목 추가 (AI 썸네일)</button>
         
@@ -101,9 +101,7 @@
         </div>
       </div>
       
-      <div id="search-session-area" style="display: none;">
-        <div id="session-search-list" class="list-container"></div>
-      </div>
+      <div id="search-session-area" style="display: none;"><div id="session-search-list" class="list-container"></div></div>
     </div>
 
     <div id="history-view" class="view-section">
@@ -120,9 +118,8 @@
     </div>
 
     <div id="goal-view" class="view-section">
-      
       <div id="goal-setup-area">
-        <h2 class="mb-20">🎯 AI 루틴 & 목표 설정</h2>
+        <h2 class="mb-20">🎯 AI 디테일 루틴 설계</h2>
         <div class="record-card mb-20" style="border-color: var(--primary);">
           <div class="input-group"><label>목표 종목 및 무게</label><input type="text" id="goal-target" placeholder="예: 겟업 48kg"></div>
           <div class="input-group"><label>현재 기록</label><input type="text" id="goal-current" placeholder="예: 겟업 40kg"></div>
@@ -136,7 +133,7 @@
         </div>
         
         <div id="ai-loading" style="display: none; text-align: center; padding: 20px; color: var(--primary);">
-          <p class="mb-10" id="ai-loading-text">🧠 AI가 주기화 데이터를 분석 중입니다...</p>
+          <p class="mb-10" id="ai-loading-text">🧠 AI가 주기화와 신경계 회복을 고려하여 계산 중입니다...</p>
           <div class="loader"></div>
         </div>
         
@@ -161,7 +158,7 @@
             <span id="goal-session-count">0 / 0 세션</span>
           </div>
         </div>
-        <h3 class="mb-10">📅 운동 세션 일정표</h3>
+        <h3 class="mb-10">📅 상세 훈련 스케줄</h3>
         <div id="goal-sessions-list" class="list-container mb-20"></div>
         <button class="secondary-btn mt-20" onclick="resetGoal()" style="border-color: #ff4a4a; color: #ff4a4a; background: transparent;">목표 포기 및 초기화</button>
       </div>
@@ -170,7 +167,7 @@
     <div id="settings-view" class="view-section">
       <h2 class="mb-20">⚙️ API 연동 설정</h2>
       <div class="record-card">
-        <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 15px;">Vercel 배포 전, <b>로컬 테스트</b>용 OpenAI API 키를 입력하세요.<br><br>🚨 키를 비워두면 자동으로 Vercel 서버리스(/api) 백엔드를 호출합니다.</p>
+        <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 15px;">Vercel 배포 전, <b>로컬 환경 테스트</b>용 OpenAI API 키를 입력하세요.<br><br>🚨 키를 지워두면 자동으로 Vercel 서버리스(/api) 백엔드를 호출하도록 전환됩니다.</p>
         <div class="input-group">
           <label>OpenAI API Key (sk-...)</label>
           <input type="password" id="openai-key" placeholder="비워두면 Vercel 백엔드 사용">
