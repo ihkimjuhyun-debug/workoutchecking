@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkActiveGoal();
   document.getElementById('openai-key').value = localStorage.getItem('pr_openai_key') || '';
   
+  // 카테고리 다중 선택 바인딩
   document.querySelectorAll('#category-selection .cat-btn').forEach(btn => {
     btn.onclick = function() {
       const cat = this.dataset.cat;
@@ -48,7 +49,7 @@ async function callOpenAI(type, bodyData) {
   return data;
 }
 
-// 🔥 루틴 생성 (언어 완전 강제 및 영양 섭취 추가)
+// 🔥 루틴 생성 (100% 한국어 강제 및 영양/체중 파싱 강화)
 async function generateAIRoutines() {
   const name = document.getElementById('goal-name').value.trim();
   const tw = document.getElementById('goal-target-weight').value;
@@ -63,31 +64,32 @@ async function generateAIRoutines() {
   document.getElementById('ai-loading').style.display = 'block';
   document.getElementById('ai-routines-area').style.display = 'none';
 
-  // 🔥 100% 한국어 강제 + 보디빌딩 베이스 영양 컨텍스트 추가
-  const systemPrompt = `You are a Master Strength Coach. 
-Analyze 1RM using Epley: Weight * (1 + Reps/30).
-Current: ${cw}kg x ${cr} reps. Target: ${tw}kg x ${tr} reps.
+  // 🔥 프롬프트 전면 개편: 한국어 강제, 보디빌딩식 6끼 식단 컨텍스트, 단일 JSON 구조 강제
+  const systemPrompt = `당신은 20년 경력의 엘리트 스트렝스 코치이자 영양 전문가입니다.
+사용자의 1RM(Epley 공식: 중량 * (1 + 횟수/30))을 분석하여 목표 달성을 위한 피킹(Peaking) 루틴과 영양 가이드를 JSON으로 작성하세요.
+현재 능력: ${cw}kg ${cr}회 / 목표: ${tw}kg ${tr}회
 
-CRITICAL INSTRUCTIONS:
-1. LANGUAGE: ALL OUTPUT MUST BE STRICTLY IN KOREAN. NEVER USE ENGLISH for titles, descriptions, details, or rationales. Translate exercise names to Korean (e.g., 'Deadlift' -> '데드리프트').
-2. PEAKING: Program MUST scale up to the target weight. Final session MUST attempt the target load.
-3. RATIONALE: Explain rationale biomechanically (e.g. Platform building, Antagonist co-contraction) in professional Korean.
-4. NUTRITION: Recommend a target body weight and daily nutrition (Calories, Protein, Carbs, Fats) required to hit this strength goal. Base the nutrition around an advanced athlete eating 6 meals a day (typically ~40g Protein, ~80g Carbs per meal).
-5. FORMAT: Suffix ALL numbers with "회"(reps) and "세트"(sets). Example: "130kg 1회 3세트".
+[필수 규칙 - 위반 시 치명적 오류 발생]
+1. 언어 강제: 모든 출력값(title, desc, detail, rationale, nutrition 등)은 **무조건 100% 한국어**로 작성하세요. 영어 사용 절대 금지.
+2. 영양 가이드(nutrition): 하루 6끼 식사(끼니당 단백질 40g, 탄수화물 80g 수준)를 수행하는 고강도 훈련자의 식단 패턴에 맞추어, 이 목표를 달성하기 위한 하루 총 매크로(탄/단/지)와 식단 조언을 한국어로 작성하세요.
+3. 체중(recommendedWeight): 목표 중량에 걸맞은 적정 체중을 한국어로 제시하세요. (예: 85kg)
+4. 피킹 훈련: 주차별로 점진적 과부하를 거쳐 마지막 세션은 반드시 목표 중량(${tw}kg)에 도달해야 합니다.
+5. 숫자 표기법: 모든 훈련 detail의 숫자 뒤에는 '회', '세트'를 한국어로 붙이세요. (예: 130kg 1회 3세트)
+6. 코치 분석(rationale): 보조 운동이 본 운동에 기여하는 역학적 이유(발사대 역할, 길항근 수축, 방산 효과 등)를 전문적인 한국어로 설명하세요.
 
-Return JSON EXACTLY:
+반드시 아래 JSON 형태를 그대로 복사하여 값만 채워 응답하세요:
 {
+  "recommendedWeight": "목표 체중 (예: 85kg)",
+  "nutrition": "식단 조언 (한국어)",
   "routines": [
     {
-      "title": "루틴 이름 (Korean)", 
-      "desc": "설명 (Korean)", 
-      "recommendedWeight": "적절 체중 (예: 85kg)",
-      "nutrition": "식단 가이드 (예: 하루 6끼 기준, 단백질 240g, 탄수 480g 섭취 요망)",
+      "title": "루틴 이름 (한국어)",
+      "desc": "루틴 요약 (한국어)",
       "sessions": [
         {
-          "title": "주차 이름 (Korean)", 
-          "detail": "훈련 내용 (Korean)", 
-          "rationale": "코치 분석 (Korean)"
+          "title": "주차 이름 (예: 1주차 - 볼륨 적응기)",
+          "detail": "훈련 내용 (예: 100kg 5회 5세트)",
+          "rationale": "전문 코치 분석 (한국어)"
         }
       ]
     }
@@ -97,28 +99,46 @@ Return JSON EXACTLY:
   try {
     const data = await callOpenAI('chat', {
       model: "gpt-4o",
-      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: `Generate a ${dur}-month peaking routine and diet for ${name}.` }],
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: `목표 종목: ${name}, ${dur}개월짜리 피킹 루틴과 식단을 한국어로 생성해.` }],
       response_format: { type: "json_object" }
     });
 
     const parsed = JSON.parse(data.choices[0].message.content);
-    generatedRoutinesTemp = parsed.routines || parsed.routine || Object.values(parsed).find(Array.isArray) || [];
+    
+    // 🔥 데이터 파싱 방어 코드: 루트에 있든 배열 안에 있든 무조건 뽑아냅니다.
+    const globalWeight = parsed.recommendedWeight || "목표 체중 분석 중 누락됨";
+    const globalNutrition = parsed.nutrition || "영양 식단 분석 중 누락됨";
 
-    if (!Array.isArray(generatedRoutinesTemp) || generatedRoutinesTemp.length === 0) throw new Error("형식이 올바르지 않습니다.");
+    let extractedRoutines = parsed.routines || parsed.routine || Object.values(parsed).find(Array.isArray) || [];
+    
+    if (!Array.isArray(extractedRoutines) || extractedRoutines.length === 0) {
+      throw new Error("AI가 루틴 배열을 정상적으로 생성하지 못했습니다.");
+    }
 
+    // 각 루틴 객체에 전역 체중/영양 정보를 주입하여 유실 차단
+    generatedRoutinesTemp = extractedRoutines.map(r => ({
+      ...r,
+      recommendedWeight: r.recommendedWeight || globalWeight,
+      nutrition: r.nutrition || globalNutrition
+    }));
+
+    // UI 렌더링
     document.getElementById('ai-routines-list').innerHTML = generatedRoutinesTemp.map((r, i) => `
       <div class="ai-routine-card" id="routine-card-${i}" onclick="selectRoutine(${i})">
         <div class="ai-routine-title">${r.title}</div>
         <div class="ai-routine-desc">${r.desc}</div>
-        <div class="mt-10" style="font-size:0.85rem; color:#aaa;"><b>추천 식단:</b> ${r.nutrition}</div>
-        <div class="mt-10" style="font-size:0.8rem; color:var(--primary); font-weight:bold;">총 ${r.sessions.length}개 세션 설계</div>
+        <div class="mt-10" style="font-size:0.85rem; color:#aaa; line-height: 1.4;">
+          <b>💪 추천 체중:</b> ${r.recommendedWeight}<br>
+          <b>🥗 맞춤 식단:</b> ${r.nutrition}
+        </div>
+        <div class="mt-10" style="font-size:0.8rem; color:var(--primary); font-weight:bold;">총 ${r.sessions ? r.sessions.length : 0}개 세션 설계됨</div>
       </div>`).join('');
 
     document.getElementById('ai-loading').style.display = 'none';
     document.getElementById('ai-routines-area').style.display = 'block';
 
   } catch (err) {
-    alert("오류: " + err.message);
+    alert("오류 발생: " + err.message);
     document.getElementById('btn-generate-routine').style.display = 'block';
     document.getElementById('ai-loading').style.display = 'none';
   }
@@ -141,8 +161,8 @@ function startSelectedRoutine() {
   const goalData = {
     title: `${name} ${tw}kg ${tr}회 달성 프로젝트`,
     target: `${tw}kg ${tr}회`,
-    recommendedWeight: routine.recommendedWeight || "AI 분석 중 체중 정보 누락",
-    nutrition: routine.nutrition || "AI 분석 중 영양 정보 누락",
+    recommendedWeight: routine.recommendedWeight, // 파싱된 체중 저장
+    nutrition: routine.nutrition, // 파싱된 영양 정보 저장
     sessions: routine.sessions.map(s => ({ ...s, done: false })),
     total: routine.sessions.length,
     completed: 0,
@@ -157,9 +177,9 @@ function renderActiveGoal(goal) {
   document.getElementById('active-goal-title').innerText = goal.title;
   document.getElementById('active-goal-desc').innerText = `목표: ${goal.target}`;
   
-  // 🔥 영양 정보 및 권장 체중 렌더링
-  document.getElementById('active-goal-weight').innerText = goal.recommendedWeight;
-  document.getElementById('active-goal-nutrition').innerText = goal.nutrition;
+  // 영양 정보 렌더링
+  document.getElementById('active-goal-weight').innerText = goal.recommendedWeight || "정보 없음";
+  document.getElementById('active-goal-nutrition').innerText = goal.nutrition || "정보 없음";
 
   const percent = Math.round((goal.completed / goal.total) * 100);
   document.getElementById('goal-progress-bar').style.width = percent + '%';
