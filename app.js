@@ -3,13 +3,12 @@ let generatedRoutinesTemp = [];
 let selectedRoutineIndex = null;
 let pendingDalleB64 = "";
 
-// 초기화 및 이벤트 바인딩
 document.addEventListener('DOMContentLoaded', () => {
   initStorage();
   checkActiveGoal();
   document.getElementById('openai-key').value = localStorage.getItem('pr_openai_key') || '';
   
-  // 카테고리 선택 이벤트 (버그 방지를 위해 JS에서 직접 바인딩)
+  // 카테고리 다중 선택 바인딩
   document.querySelectorAll('#category-selection .cat-btn').forEach(btn => {
     btn.onclick = function() {
       const cat = this.dataset.cat;
@@ -26,10 +25,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initStorage() {
   if (!localStorage.getItem('pr_sessions')) localStorage.setItem('pr_sessions', JSON.stringify({}));
-  if (!localStorage.getItem('pr_exercises')) localStorage.setItem('pr_exercises', JSON.stringify(defaultExercisesDB));
+  if (!localStorage.getItem('pr_exercises')) {
+    const defaultDB = {
+      "겟업": { category: "케틀벨", target: "전신", history: [] },
+      "데드리프트": { category: "등", target: "후면", history: [] }
+    };
+    localStorage.setItem('pr_exercises', JSON.stringify(defaultDB));
+  }
 }
 
-// 🔥 무적의 OpenAI 호출 함수 (에러 핸들링 강화)
 async function callOpenAI(type, bodyData) {
   const localKey = localStorage.getItem('pr_openai_key');
   const url = localKey ? 
@@ -45,9 +49,8 @@ async function callOpenAI(type, bodyData) {
   return data;
 }
 
-// 🔥 루틴 생성 메인 함수 (반응 없음 문제 해결)
+// 🔥 루틴 생성 (파싱 버그 차단 및 전문성 강화)
 async function generateAIRoutines() {
-  // 1. 입력값 검증
   const name = document.getElementById('goal-name').value.trim();
   const tw = document.getElementById('goal-target-weight').value;
   const tr = document.getElementById('goal-target-reps').value;
@@ -57,52 +60,49 @@ async function generateAIRoutines() {
 
   if (!name || !tw || !tr || !cw || !cr) return alert("모든 항목을 입력해주세요.");
 
-  // 2. UI 상태 변경 (로딩 시작)
   document.getElementById('btn-generate-routine').style.display = 'none';
   document.getElementById('ai-loading').style.display = 'block';
   document.getElementById('ai-routines-area').style.display = 'none';
 
-  // 3. 전문 프롬프트 구성
-  const systemPrompt = `You are an Elite Strength Coach. 
-Analyze the user's 1RM using the Epley formula: Weight * (1 + Reps/30).
+  const systemPrompt = `You are a Master Strength Coach (SFG, Powerlifting Elite).
+Analyze 1RM using Epley: Weight * (1 + Reps/30).
 Current: ${cw}kg x ${cr} reps. Target: ${tw}kg x ${tr} reps.
-Generate 3 routines (1. Peaking, 2. Hypertrophy Base, 3. Conjugate).
 
-CRITICAL RULES:
-1. Suffix all numbers with "회"(reps) and "세트"(sets). Example: "100kg 5회 5세트".
-2. Explain 'Rationale' in Korean focusing on Biomechanics (e.g. "광배근은 프레스의 발사대 역할").
-3. Final sessions MUST reach or exceed the target workload.
+CRITICAL INSTRUCTIONS:
+1. PEAKING: The program MUST scale up to the target weight. Week 1 is accumulation, Week 12 is the final attempt at ${tw}kg.
+2. ANTAGONIST SYNERGY: Explain rationale (e.g. why Rows for Press) using professional Korean biomechanics like "Platform building", "Irradiation", and "Antagonist co-contraction".
+3. FORMAT: Suffix numbers with "회"(reps) and "세트"(sets). Example: "130kg 1회 3세트".
+4. NO GENERIC TERMS: Use specific strength science terms.
 
-Return JSON in this exact structure:
-{"routines": [{"title": "Name", "desc": "Short", "sessions": [{"title": "Day 1", "detail": "Weight 회 세트", "rationale": "Reason"}]}]}`;
+Return JSON EXACTLY:
+{"routines": [{"title": "Name", "desc": "Short", "sessions": [{"title": "Week X", "detail": "Exercises here", "rationale": "Deep reason here"}]}]}`;
 
   try {
     const data = await callOpenAI('chat', {
       model: "gpt-4o",
-      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: `Goal: ${name} ${tw}kg ${tr}reps in ${dur} months.` }],
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: `Generate a ${dur}-month peaking routine for ${name}.` }],
       response_format: { type: "json_object" }
     });
 
     const parsed = JSON.parse(data.choices[0].message.content);
     
-    // 🔥 데이터 파싱 안전망: 배열이 아닐 경우를 대비한 무조건적 배열화
+    // 🔥 배열 추출 로직 강화
     generatedRoutinesTemp = parsed.routines || parsed.routine || Object.values(parsed).find(Array.isArray) || [];
 
-    if (generatedRoutinesTemp.length === 0) throw new Error("유효한 루틴 데이터를 받지 못했습니다.");
+    if (!Array.isArray(generatedRoutinesTemp) || generatedRoutinesTemp.length === 0) throw new Error("형식이 올바르지 않습니다.");
 
-    // 4. UI 렌더링
     document.getElementById('ai-routines-list').innerHTML = generatedRoutinesTemp.map((r, i) => `
       <div class="ai-routine-card" id="routine-card-${i}" onclick="selectRoutine(${i})">
         <div class="ai-routine-title">${r.title}</div>
         <div class="ai-routine-desc">${r.desc}</div>
-        <div class="mt-10" style="font-size:0.8rem; color:var(--primary); font-weight:bold;">총 ${r.sessions.length}개 세션 설계됨</div>
+        <div class="mt-10" style="font-size:0.8rem; color:var(--primary); font-weight:bold;">총 ${r.sessions.length}개 세션 설계</div>
       </div>`).join('');
 
     document.getElementById('ai-loading').style.display = 'none';
     document.getElementById('ai-routines-area').style.display = 'block';
 
   } catch (err) {
-    alert("오류 발생: " + err.message);
+    alert("오류: " + err.message);
     document.getElementById('btn-generate-routine').style.display = 'block';
     document.getElementById('ai-loading').style.display = 'none';
   }
@@ -123,16 +123,65 @@ function startSelectedRoutine() {
   const dur = document.getElementById('goal-duration').value;
 
   const goalData = {
-    title: `${name} ${tw}kg ${tr}회 도전`,
+    title: `${name} ${tw}kg ${tr}회 달성 프로젝트`,
     target: `${tw}kg ${tr}회`,
-    endDate: Date.now() + (dur * 30 * 24 * 60 * 60 * 1000),
     sessions: routine.sessions.map(s => ({ ...s, done: false })),
     total: routine.sessions.length,
-    completed: 0
+    completed: 0,
+    endDate: Date.now() + (dur * 30 * 24 * 60 * 60 * 1000)
   };
 
   localStorage.setItem('pr_active_goal', JSON.stringify(goalData));
   checkActiveGoal();
+}
+
+function renderActiveGoal(goal) {
+  document.getElementById('active-goal-title').innerText = goal.title;
+  document.getElementById('active-goal-desc').innerText = `목표: ${goal.target}`;
+  const percent = Math.round((goal.completed / goal.total) * 100);
+  document.getElementById('goal-progress-bar').style.width = percent + '%';
+  document.getElementById('goal-progress-text').innerText = `${percent}% 완료 (${goal.completed}/${goal.total})`;
+
+  document.getElementById('goal-sessions-list').innerHTML = goal.sessions.map((s, idx) => `
+    <div class="session-item ${s.done ? 'done' : ''}">
+      <div style="flex:1">
+        <div class="session-name">${s.title}</div>
+        <div style="font-weight:bold; color:#ddd; margin: 8px 0; font-size: 1rem;">${s.detail}</div>
+        <button class="btn-rationale" onclick="toggleSessionRationale(${idx})">💡 코치 분석 보기</button>
+        <div id="active-rationale-${idx}" class="rationale-box" style="display:none; margin-top:10px;">${s.rationale}</div>
+      </div>
+      <button class="check-btn" onclick="completeSession(${idx})">${s.done ? '완료' : '달성'}</button>
+    </div>`).join('');
+}
+
+function toggleSessionRationale(idx) {
+  const box = document.getElementById(`active-rationale-${idx}`);
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
+function completeSession(idx) {
+  let goal = JSON.parse(localStorage.getItem('pr_active_goal'));
+  if (goal.sessions[idx].done) return;
+  goal.sessions[idx].done = true;
+  goal.completed++;
+  localStorage.setItem('pr_active_goal', JSON.stringify(goal));
+  showToast("세션 완료!");
+  renderActiveGoal(goal);
+}
+
+function resetGoal() {
+  if (confirm("현재 목표를 초기화하시겠습니까?")) {
+    localStorage.removeItem('pr_active_goal');
+    checkActiveGoal();
+  }
+}
+
+// 기타 UI 헬퍼
+function showView(viewId) {
+  document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+  window.scrollTo(0, 0);
+  if (viewId === 'hof-view') renderHallOfFame();
 }
 
 function checkActiveGoal() {
@@ -147,52 +196,27 @@ function checkActiveGoal() {
   }
 }
 
-function renderActiveGoal(goal) {
-  document.getElementById('active-goal-title').innerText = goal.title;
-  document.getElementById('active-goal-desc').innerText = `목표: ${goal.target} | 기간 내 달성률`;
-  const percent = Math.round((goal.completed / goal.total) * 100);
-  document.getElementById('goal-progress-bar').style.width = percent + '%';
-  document.getElementById('goal-progress-text').innerText = `${percent}% (${goal.completed}/${goal.total} 완료)`;
-
-  document.getElementById('goal-sessions-list').innerHTML = goal.sessions.map((s, idx) => `
-    <div class="session-item ${s.done ? 'done' : ''}">
-      <div style="flex:1">
-        <div class="session-name">${s.title}</div>
-        <div style="font-weight:bold; color:#ddd; margin: 5px 0;">${s.detail}</div>
-        <button class="btn-rationale" onclick="this.nextElementSibling.style.display='block'">코치 분석 보기</button>
-        <div class="rationale-box" style="display:none; font-size:0.8rem; background:#333; padding:10px; border-radius:5px; margin-top:5px;">${s.rationale}</div>
-      </div>
-      <button class="check-btn" onclick="completeSession(${idx})">${s.done ? '완료' : '달성'}</button>
-    </div>`).join('');
+async function generateDalleIcon() {
+  const name = document.getElementById('custom-ex-name').value.trim();
+  if (!name) return alert("종목명을 입력하세요.");
+  const btn = document.getElementById('btn-gen-img');
+  btn.innerText = "🎨 생성 중..."; btn.disabled = true;
+  try {
+    const data = await callOpenAI('image', { model: "dall-e-2", prompt: `Flat minimalist fitness icon of ${name}, dark grey background, orange accent`, n: 1, size: "256x256", response_format: "b64_json" });
+    pendingDalleB64 = data.data[0].b64_json;
+    document.getElementById('generated-img').src = `data:image/png;base64,${pendingDalleB64}`;
+    document.getElementById('ai-img-preview').style.display = 'block';
+  } catch (err) { alert(err.message); }
+  finally { btn.innerText = "🎨 AI 썸네일 생성"; btn.disabled = false; }
 }
 
-function completeSession(idx) {
-  let goal = JSON.parse(localStorage.getItem('pr_active_goal'));
-  if (goal.sessions[idx].done) return;
-  goal.sessions[idx].done = true;
-  goal.completed++;
-  localStorage.setItem('pr_active_goal', JSON.stringify(goal));
-  showToast("세션 완료! 고생하셨습니다.");
-  renderActiveGoal(goal);
+function saveApiKey() {
+  localStorage.setItem('pr_openai_key', document.getElementById('openai-key').value);
+  alert('저장되었습니다.');
 }
 
-function resetGoal() {
-  if (confirm("정말 목표를 초기화하시겠습니까?")) {
-    localStorage.removeItem('pr_active_goal');
-    checkActiveGoal();
-  }
+function showToast(m) {
+  const t = document.getElementById('toast-msg');
+  t.innerText = m; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
-
-// 기타 헬퍼 함수
-function showView(viewId) {
-  document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-  document.getElementById(viewId).classList.add('active');
-  if(viewId === 'hof-view') renderHallOfFame();
-}
-function saveApiKey() { localStorage.setItem('pr_openai_key', document.getElementById('openai-key').value); alert('저장됨'); }
-function showToast(m) { const t = document.getElementById('toast-msg'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000); }
-
-const defaultExercisesDB = {
-  "겟업": { category: "케틀벨", target: "전신", history: [] },
-  "데드리프트": { category: "등", target: "후면", history: [] }
-};
