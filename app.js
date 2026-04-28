@@ -116,56 +116,60 @@ function toggleCustomExerciseForm() { const form = document.getElementById('cust
 
 
 // ------------------------------------------------------------------------
-// 🚀 AI 루틴 & 목표 설정 (🔥 파싱 버그 완벽 수정 및 프롬프트 동기화)
+// 🚀 AI 루틴 & 목표 설정 (🔥 1RM 추산 및 가독성 포맷 강제 프롬프트)
 // ------------------------------------------------------------------------
 let generatedRoutinesTemp = [];
 let selectedRoutineIndex = null;
 
 async function generateAIRoutines() {
-  const target = document.getElementById('goal-target').value.trim();
-  const current = document.getElementById('goal-current').value.trim();
+  const name = document.getElementById('goal-name').value.trim();
+  const tWeight = document.getElementById('goal-target-weight').value;
+  const tReps = document.getElementById('goal-target-reps').value;
+  const cWeight = document.getElementById('goal-current-weight').value;
+  const cReps = document.getElementById('goal-current-reps').value;
   const months = parseInt(document.getElementById('goal-duration').value);
-  if (!target || !current) return alert("목표와 현재 기록을 입력해주세요.");
+
+  if (!name || !tWeight || !tReps || !cWeight || !cReps) return alert("종목, 목표 기록, 현재 기록을 모두 입력해주세요.");
 
   document.getElementById('btn-generate').style.display = 'none';
   document.getElementById('ai-loading').style.display = 'block';
 
-  // 🔥 프롬프트 수정: JSON Object 강제 규격 확립
-  const systemPrompt = `You are a Master SFG and Elite Powerlifting Coach with 20 years of experience.
-Your job is to generate 3 specialized workout routines to take the user from their CURRENT performance to their TARGET performance over the specified duration.
+  const systemPrompt = `You are a Master SFG and Elite Powerlifting Coach.
+Generate 3 specialized workout routines for the user.
 
-CRITICAL RULES FOR PROGRESSION:
-1. PEAKING IS MANDATORY: The user MUST mathematically and physically reach or attempt the TARGET weight in the final sessions. If the goal is 60kg, the final weeks MUST contain 56kg or 60kg (e.g., Heavy Singles, Push Press, or Overload holds). DO NOT stay at light weights.
-2. Progressive Overload: Start with Accumulation (Volume), move to Intensification (Heavy weights, lower reps), and end with Peaking (Near TARGET weight).
-
-CRITICAL RULES FOR RATIONALE (코치 코멘트):
-1. Must be written in highly professional, biomechanical Korean.
-2. NO GENERIC BULLSHIT. Do not write "근지구력 향상" or "안정적인 볼륨".
-3. ANTAGONIST SYNERGY: If you program Pulling exercises (Rows, Pull-ups) for a Pressing goal, explicitly explain WHY. (e.g., "등 상부와 광배근은 프레스의 발사대(Platform) 역할을 합니다. 강력한 로우 운동은 길항근을 수축시켜 어깨 관절의 안정성을 극대화하고 방산(Irradiation) 효과를 일으켜 프레스 중량을 올립니다.")
-4. NEURAL ADAPTATION: Explain heavy sets as "CNS(중추신경계) 적응 및 고역치 운동단위 동원".
+CRITICAL RULES:
+1. CALCULATE 1RM: Evaluate the user's current strength based on their input (e.g. 100kg x 5 reps = estimated 1RM ~116kg). If their estimated 1RM is already close to the target, use an aggressive peaking block.
+2. PEAKING IS MANDATORY: The final sessions MUST reach or attempt the TARGET weight AND reps.
+3. FORMATTING RULE: In the "detail" field, YOU MUST explicitly use the Korean terms "회" (reps) and "세트" (sets). DO NOT USE "5x5" or "3x8". 
+   - CORRECT EXAMPLE: "OHP 40kg 5회 5세트, 바벨 로우 40kg 8회 4세트"
+   - INCORRECT: "OHP 40kg 5x5"
+4. RATIONALE: Explain antagonist synergy and CNS adaptation in highly professional Korean based on the user's specific current-to-target jump.
 
 JSON Format MUST be EXACTLY an object with a "routines" array key:
 {
   "routines": [
     {
       "title": "1. SFG & Peaking Program", 
-      "desc": "StrongFirst 기반의 신경계 동원 및 절대근력 피킹 프로그램", 
+      "desc": "신경계 동원 및 절대근력 피킹 프로그램", 
       "sessions": [
         {
           "title": "Week 1 (Volume)", 
-          "detail": "Kettlebell Press 40kg 5x5, Heavy Bent Over Row 40kg 4x8", 
-          "rationale": "프레스 중량을 올리기 위해 광배근을 두껍게 만들어 안정적인 발사대를 구축합니다. 길항근의 성장은 프레스 하강 구간의 통제력을 높입니다."
+          "detail": "${name} 80kg 5회 5세트, 바벨 로우 80kg 8회 4세트", 
+          "rationale": "현재 ${cWeight}kg ${cReps}회가 가능하시므로 1RM의 75% 수준에서 운동단위를 동원합니다. 광배근을 강화하여 프레스 발사대를 구축합니다."
         }
       ]
     }
   ]
 }
-Generate 8 to 12 realistic, progressive sessions per routine. The final session MUST reach or heavily overload near the TARGET weight.`;
+Generate 8 to 12 realistic, progressive sessions per routine.`;
 
   try {
     const data = await callOpenAI('chat', {
       model: "gpt-4o", 
-      messages: [ { role: "system", content: systemPrompt }, { role: "user", content: `목표: ${target}, 현재: ${current}, 기간: ${months}개월` } ],
+      messages: [ 
+        { role: "system", content: systemPrompt }, 
+        { role: "user", content: `종목: ${name}, 현재능력: ${cWeight}kg ${cReps}회, 최종목표: ${tWeight}kg ${tReps}회, 기간: ${months}개월` } 
+      ],
       response_format: { type: "json_object" }
     });
 
@@ -173,25 +177,15 @@ Generate 8 to 12 realistic, progressive sessions per routine. The final session 
     let rawContent = data.choices[0].message.content.replace(/```json/g, '').replace(/```/g, '').trim();
     const parsedData = JSON.parse(rawContent);
 
-    // 🔥 무적의 배열 추출 로직 (.map is not a function 버그 차단)
-    if (Array.isArray(parsedData)) {
-      generatedRoutinesTemp = parsedData;
-    } else if (parsedData.routines && Array.isArray(parsedData.routines)) {
-      generatedRoutinesTemp = parsedData.routines;
-    } else {
-      // 객체 안에 배열이 숨어있는 경우 찾아서 추출
+    if (Array.isArray(parsedData)) generatedRoutinesTemp = parsedData;
+    else if (parsedData.routines && Array.isArray(parsedData.routines)) generatedRoutinesTemp = parsedData.routines;
+    else {
       const arrays = Object.values(parsedData).filter(val => Array.isArray(val));
-      if (arrays.length > 0) {
-        generatedRoutinesTemp = arrays[0];
-      } else {
-        // 단일 객체만 온 경우 배열로 감싸기
-        generatedRoutinesTemp = [parsedData];
-      }
+      generatedRoutinesTemp = arrays.length > 0 ? arrays[0] : [parsedData];
     }
 
-    // 최종 안전망 점검
     if (!Array.isArray(generatedRoutinesTemp) || typeof generatedRoutinesTemp.map !== 'function') {
-      throw new Error("AI가 반환한 데이터 형식이 배열이 아닙니다.");
+      throw new Error("AI 응답 데이터 형식이 올바르지 않습니다.");
     }
 
     document.getElementById('ai-loading').style.display = 'none';
@@ -201,7 +195,7 @@ Generate 8 to 12 realistic, progressive sessions per routine. The final session 
       <div class="ai-routine-card" id="routine-card-${i}" onclick="selectRoutine(${i})">
         <div class="ai-routine-title">${r.title}</div>
         <div class="ai-routine-desc">${r.desc}</div>
-        <div style="margin-top:10px; font-size:0.8rem; color:var(--primary);">세부 훈련: 총 ${r.sessions ? r.sessions.length : 0}개 세션 (피킹 포함)</div>
+        <div style="margin-top:10px; font-size:0.8rem; color:var(--primary);">세부 훈련: 총 ${r.sessions ? r.sessions.length : 0}개 세션 설계</div>
       </div>`).join('');
   } catch (err) {
     alert("API 호출 오류: " + err.message);
@@ -218,14 +212,16 @@ function selectRoutine(index) {
 
 function startSelectedRoutine() {
   if (selectedRoutineIndex === null) return alert("루틴을 선택해주세요.");
-  const target = document.getElementById('goal-target').value.trim(); 
-  const current = document.getElementById('goal-current').value.trim();
-  const months = parseInt(document.getElementById('goal-duration').value); 
-  const routine = generatedRoutinesTemp[selectedRoutineIndex];
   
-  if (!routine.sessions || !Array.isArray(routine.sessions)) {
-    return alert("해당 루틴에 세션 데이터가 없습니다. 다시 생성해주세요.");
-  }
+  const name = document.getElementById('goal-name').value.trim();
+  const tWeight = document.getElementById('goal-target-weight').value;
+  const tReps = document.getElementById('goal-target-reps').value;
+  const cWeight = document.getElementById('goal-current-weight').value;
+  const cReps = document.getElementById('goal-current-reps').value;
+  const months = parseInt(document.getElementById('goal-duration').value); 
+  
+  const routine = generatedRoutinesTemp[selectedRoutineIndex];
+  if (!routine.sessions || !Array.isArray(routine.sessions)) return alert("루틴 데이터 오류입니다. 다시 생성해주세요.");
 
   let sessions = [], startDate = new Date(), endDate = new Date(); 
   endDate.setMonth(endDate.getMonth() + months);
@@ -239,14 +235,22 @@ function startSelectedRoutine() {
       id: i, 
       date: `${sDate.getFullYear()}.${String(sDate.getMonth()+1).padStart(2,'0')}.${String(sDate.getDate()).padStart(2,'0')}`, 
       title: routine.sessions[i].title || `Day ${i+1}`, 
-      detail: routine.sessions[i].detail || "상세 훈련 내용이 없습니다.", 
-      rationale: routine.sessions[i].rationale || "점진적 과부하를 위한 세션입니다.",
+      detail: routine.sessions[i].detail || "상세 훈련 내용 없음", 
+      rationale: routine.sessions[i].rationale || "점진적 과부하 훈련",
       done: false 
     });
   }
 
-  localStorage.setItem('pr_active_goal', JSON.stringify({ target, current, months, endDate: endDate.getTime(), totalSessions: totalSessions, completedSessions: 0, sessions }));
-  
+  // 🔥 새로운 UI에 맞게 데이터 저장 구조 변경
+  const goalData = {
+    name: name,
+    targetW: tWeight, targetR: tReps,
+    currentW: cWeight, currentR: cReps,
+    months: months, endDate: endDate.getTime(), 
+    totalSessions: totalSessions, completedSessions: 0, sessions: sessions
+  };
+
+  localStorage.setItem('pr_active_goal', JSON.stringify(goalData));
   document.getElementById('goal-setup-area').style.display = 'none'; 
   document.getElementById('ai-routines-area').style.display = 'none'; 
   document.getElementById('btn-generate').style.display = 'block'; 
@@ -271,8 +275,10 @@ function toggleRationale(idx) {
 }
 
 function renderActiveGoal(goal) {
-  document.getElementById('active-goal-title').innerText = goal.target; 
-  document.getElementById('active-goal-desc').innerText = `현재: ${goal.current} ➔ 목표: ${goal.target}`;
+  // 🔥 화면 출력 최적화
+  document.getElementById('active-goal-title').innerText = `${goal.name} ${goal.targetW}kg ${goal.targetR}회`; 
+  document.getElementById('active-goal-desc').innerText = `현재 가능: ${goal.currentW}kg ${goal.currentR}회 ➔ 최종 목표 달성까지`;
+  
   const diffDays = Math.ceil((goal.endDate - new Date().getTime()) / (1000 * 60 * 60 * 24)); 
   document.getElementById('active-goal-dday').innerText = `D-${diffDays > 0 ? diffDays : 'Day'}`;
   const percentage = goal.totalSessions === 0 ? 0 : Math.round((goal.completedSessions / goal.totalSessions) * 100);
