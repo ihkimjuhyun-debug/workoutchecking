@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elite PR Tracker v9.0 (Ultimate AI)</title>
+  <title>Elite PR Tracker v9.0 (Beast Tamer Edition)</title>
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <link rel="stylesheet" href="style.css">
 </head>
@@ -68,9 +68,9 @@
         <div class="input-group"><label>종목명</label><input type="text" id="custom-ex-name"></div>
         <div class="input-row">
           <div class="input-group"><label>카테고리</label><select id="custom-ex-cat" class="custom-select"><option value="케틀벨">케틀벨</option><option value="하체">하체</option><option value="가슴">가슴</option><option value="등">등</option><option value="어깨">어깨</option></select></div>
-          <div class="input-group"><label>타겟</label><input type="text" id="custom-ex-target"></div>
+          <div class="input-group"><label>타겟 부위</label><input type="text" id="custom-ex-target"></div>
         </div>
-        <div id="ai-img-preview" style="display:none; text-align:center; margin:15px 0;"><img id="generated-img" style="width:60px; height:60px; border-radius:10px; border:2px solid var(--primary);"></div>
+        <div id="ai-img-preview" style="display:none; text-align:center; margin:15px 0;"><img id="generated-img" style="width:60px; height:60px; border-radius:10px; border:2px solid var(--primary); object-fit: cover;"></div>
         <button class="secondary-btn mt-10" id="btn-gen-img" onclick="generateDalleIcon()">🎨 AI 썸네일 생성</button>
         <button class="primary-btn mt-10" onclick="addCustomExercise()">✅ 종목 최종 저장</button>
       </div>
@@ -84,14 +84,14 @@
         <h2 class="mb-20">🎯 1RM 기반 AI 루틴 설계</h2>
         <div class="record-card">
           <div class="input-group"><label>목표 종목명</label><input type="text" id="goal-name" placeholder="예: OHP, 데드리프트"></div>
-          <label>🎯 최종 도달 목표 (중량 및 횟수)</label>
-          <div class="input-row mb-10"><input type="number" id="goal-target-weight" placeholder="목표 무게(kg)"><input type="number" id="goal-target-reps" placeholder="목표 횟수(회)"></div>
-          <label>🔥 현재 최대 기록 (수행 가능 범위)</label>
+          <label>🎯 최종 도달 목표</label>
+          <div class="input-row mb-10"><input type="number" id="goal-target-weight" placeholder="무게(kg)"><input type="number" id="goal-target-reps" placeholder="횟수(회)"></div>
+          <label>🔥 현재 최대 기록 (1RM 산출)</label>
           <div class="input-row mb-10"><input type="number" id="goal-current-weight" placeholder="현재 무게(kg)"><input type="number" id="goal-current-reps" placeholder="현재 횟수(회)"></div>
           <div class="input-group"><label>훈련 기간</label><select id="goal-duration" class="custom-select"><option value="1">1개월</option><option value="3" selected>3개월</option><option value="6">6개월</option></select></div>
           <button class="primary-btn mt-20" id="btn-generate-routine" onclick="generateAIRoutines()">✨ 루틴 생성하기</button>
         </div>
-        <div id="ai-loading" style="display: none; text-align: center; padding: 30px;"><div class="loader"></div><p class="mt-10" id="ai-loading-text">AI 코치가 1RM을 분석하여 루틴을 짜고 있습니다...</p></div>
+        <div id="ai-loading" style="display: none; text-align: center; padding: 30px;"><div class="loader"></div><p class="mt-10" id="ai-loading-text">최고의 코치가 1RM을 분석하여 루틴을 짜고 있습니다...</p></div>
         <div id="ai-routines-area" style="display: none;"><div id="ai-routines-list" class="list-container mt-20"></div><button class="primary-btn mt-20" onclick="startSelectedRoutine()" style="background:#4CAF50;">🚀 선택한 루틴 시작</button></div>
       </div>
       <div id="active-goal-area" style="display: none;">
