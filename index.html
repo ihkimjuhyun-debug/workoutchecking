@@ -61,6 +61,17 @@
   .chip.selected{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700; }
   .chip.add{ border-style:dashed; color:var(--text-dim); }
 
+  .exercise-card-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .exercise-card{
+    padding:9px 13px; border-radius:10px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--text); font-size:13px; cursor:pointer;
+    display:flex; align-items:center; gap:5px;
+  }
+  .exercise-card:hover{ border-color:var(--accent); }
+  .exercise-card.selected{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent); font-weight:700; }
+  .exercise-card .star{ color:var(--accent); font-size:11px; }
+  .exercise-card.add{ border-style:dashed; color:var(--text-dim); }
+
   input[type=text], input[type=number], select{
     width:100%; padding:11px 12px; border-radius:8px; border:1px solid var(--line);
     background:var(--panel-2); color:var(--text); font-size:15px;
@@ -179,8 +190,9 @@
       <h2>부위 선택</h2>
       <div class="chip-row" id="bodyPartRow"></div>
 
-      <h2>종목</h2>
-      <input type="text" id="exerciseInput" list="exerciseList" placeholder="종목 이름 입력 또는 선택 (예: 벤치프레스)">
+      <h2>종목 (탭 한 번으로 추가)</h2>
+      <div class="exercise-card-row" id="exerciseCardRow"></div>
+      <input type="text" id="exerciseInput" list="exerciseList" placeholder="새 종목 입력 또는 위 카드에서 선택">
       <datalist id="exerciseList"></datalist>
 
       <div style="margin-top:14px;">
@@ -234,6 +246,16 @@
     </div>
 
     <div class="card">
+      <h2>대표 종목 기록</h2>
+      <div id="hofSignatureList"></div>
+      <div class="row" style="margin-top:12px;">
+        <input type="text" id="newSigName" placeholder="종목 이름 (예: 인클라인 벤치)">
+        <select id="newSigBodyPart"></select>
+      </div>
+      <button class="secondary" onclick="addSignatureExercise()">+ 대표 종목으로 추가</button>
+    </div>
+
+    <div class="card">
       <h2>부위별 기록</h2>
       <div id="hofBodyPartList"></div>
     </div>
@@ -252,9 +274,17 @@
 <script>
 /* ---------- 상태 ---------- */
 const BODY_PARTS = ["가슴","등","어깨","팔","하체","복근"];
+const SIGNATURE_DEFAULTS = [
+  {name:"스쿼트", bodyPart:"하체"},
+  {name:"데드리프트", bodyPart:"등"},
+  {name:"벤치프레스", bodyPart:"가슴"},
+  {name:"오버헤드프레스", bodyPart:"어깨"},
+  {name:"바벨로우", bodyPart:"등"}
+];
 let entries = [];               // {id,date,bodyPart,exerciseName,sets:[{weight,reps}],volume,maxWeight}
 let exercisesByBodyPart = {};   // bodyPart -> [exerciseName,...]
 let recentWeights = {};         // exerciseName -> [weight,...] (최근순, 최대 8개)
+let signatureExercises = [];    // [{name,bodyPart}] 5대운동 + 개인 추가 대표 종목
 
 let currentBodyPart = BODY_PARTS[0];
 let currentSets = [];
@@ -269,10 +299,27 @@ async function loadAll(){
   try{ const r = await window.storage.get("prarchive:entries"); entries = r ? JSON.parse(r.value) : []; }catch(e){ entries = []; }
   try{ const r = await window.storage.get("prarchive:exercises"); exercisesByBodyPart = r ? JSON.parse(r.value) : {}; }catch(e){ exercisesByBodyPart = {}; }
   try{ const r = await window.storage.get("prarchive:recentWeights"); recentWeights = r ? JSON.parse(r.value) : {}; }catch(e){ recentWeights = {}; }
+
+  let sig = null;
+  try{ const r = await window.storage.get("prarchive:signatureExercises"); sig = r ? JSON.parse(r.value) : null; }catch(e){ sig = null; }
+  if(!sig || sig.length===0){
+    signatureExercises = SIGNATURE_DEFAULTS.slice();
+    await persistSignatureExercises();
+  } else {
+    signatureExercises = sig;
+  }
+  // 대표 종목은 종목 카드에도 항상 보이도록 부위별 목록에 병합
+  let changed = false;
+  signatureExercises.forEach(s=>{
+    exercisesByBodyPart[s.bodyPart] = exercisesByBodyPart[s.bodyPart] || [];
+    if(!exercisesByBodyPart[s.bodyPart].includes(s.name)){ exercisesByBodyPart[s.bodyPart].push(s.name); changed = true; }
+  });
+  if(changed) await persistExercises();
 }
 async function persistEntries(){ try{ await window.storage.set("prarchive:entries", JSON.stringify(entries)); }catch(e){} }
 async function persistExercises(){ try{ await window.storage.set("prarchive:exercises", JSON.stringify(exercisesByBodyPart)); }catch(e){} }
 async function persistRecentWeights(){ try{ await window.storage.set("prarchive:recentWeights", JSON.stringify(recentWeights)); }catch(e){} }
+async function persistSignatureExercises(){ try{ await window.storage.set("prarchive:signatureExercises", JSON.stringify(signatureExercises)); }catch(e){} }
 
 /* ---------- 탭 ---------- */
 document.querySelectorAll(".tab-btn").forEach(btn=>{
@@ -294,7 +341,7 @@ function renderBodyPartChips(){
     const c = document.createElement("div");
     c.className = "chip" + (bp===currentBodyPart ? " selected" : "");
     c.textContent = bp;
-    c.onclick = ()=>{ currentBodyPart = bp; renderBodyPartChips(); renderExerciseDatalist(); };
+    c.onclick = ()=>{ currentBodyPart = bp; renderBodyPartChips(); renderExerciseDatalist(); renderExerciseCardRow(); };
     row.appendChild(c);
   });
 }
@@ -309,6 +356,43 @@ function renderExerciseDatalist(){
   });
 }
 
+/* 이전에 기록한 종목을 탭 한 번으로 불러오는 카드 목록 */
+function renderExerciseCardRow(){
+  const wrap = document.getElementById("exerciseCardRow");
+  wrap.innerHTML = "";
+  const names = exercisesByBodyPart[currentBodyPart] || [];
+  const sigNames = new Set(signatureExercises.filter(s=>s.bodyPart===currentBodyPart).map(s=>s.name));
+  if(names.length===0){
+    wrap.innerHTML = `<div class="empty" style="padding:8px 0;">이 부위는 아직 기록한 종목이 없어. 아래에 새로 입력해줘.</div>`;
+    return;
+  }
+  // 대표 종목이 먼저 오도록 정렬
+  const sorted = names.slice().sort((a,b)=>{
+    const aSig = sigNames.has(a) ? 0 : 1;
+    const bSig = sigNames.has(b) ? 0 : 1;
+    return aSig - bSig;
+  });
+  sorted.forEach(name=>{
+    const isSel = document.getElementById("exerciseInput").value.trim() === name;
+    const card = document.createElement("div");
+    card.className = "exercise-card" + (isSel ? " selected" : "");
+    card.innerHTML = (sigNames.has(name) ? `<span class="star">★</span>` : "") + name;
+    card.onclick = ()=> selectExerciseCard(name);
+    wrap.appendChild(card);
+  });
+}
+
+/* 카드를 탭했을 때: 종목명 채우고 최근 무게까지 바로 준비 */
+function selectExerciseCard(name){
+  document.getElementById("exerciseInput").value = name;
+  renderRecentWeightChips(name);
+  if(recentWeights[name] && recentWeights[name].length){
+    document.getElementById("weightInput").value = recentWeights[name][0];
+  }
+  renderExerciseCardRow();
+  document.getElementById("repsInput").focus();
+}
+
 /* ---------- 무게 입력 ---------- */
 document.getElementById("exerciseInput").addEventListener("input", ()=>{
   const name = document.getElementById("exerciseInput").value.trim();
@@ -317,6 +401,7 @@ document.getElementById("exerciseInput").addEventListener("input", ()=>{
   if(recentWeights[name] && recentWeights[name].length){
     document.getElementById("weightInput").value = recentWeights[name][0];
   }
+  renderExerciseCardRow();
 });
 
 function renderRecentWeightChips(name){
@@ -399,6 +484,7 @@ async function saveExerciseEntry(){
   document.getElementById("recentWeightChips").innerHTML = "";
   renderCurrentSetList();
   renderExerciseDatalist();
+  renderExerciseCardRow();
   renderTodaySession();
   showToast(`${name} 저장 완료 · 볼륨 ${volume.toLocaleString()}kg`);
 }
@@ -523,8 +609,90 @@ async function finishWorkout(){
   renderHallOfFame();
 }
 
+/* ---------- 대표 종목 기록 ---------- */
+function renderSignatureHallOfFame(){
+  const wrap = document.getElementById("hofSignatureList");
+  wrap.innerHTML = "";
+
+  if(signatureExercises.length===0){
+    wrap.innerHTML = `<div class="empty">등록된 대표 종목이 없어</div>`;
+  }
+
+  signatureExercises.forEach(sig=>{
+    const list = entries.filter(e=>e.exerciseName.trim().toLowerCase() === sig.name.trim().toLowerCase());
+    const div = document.createElement("div");
+    div.className = "bp-record";
+
+    if(list.length===0){
+      div.innerHTML = `<div class="bp-name"><span class="star">★</span> ${sig.name} <span style="color:var(--text-dim); font-weight:400;">(${sig.bodyPart})</span></div><div class="empty">아직 기록 없음</div>`;
+      wrap.appendChild(div);
+      return;
+    }
+
+    let bestWeight = null;
+    list.forEach(e=> e.sets.forEach(s=>{
+      if(!bestWeight || s.weight > bestWeight.weight) bestWeight = {weight:s.weight, date:e.date};
+    }));
+
+    const byDate = {};
+    list.forEach(e=>{ byDate[e.date] = (byDate[e.date]||0) + e.volume; });
+    let bestVolume = null;
+    Object.entries(byDate).forEach(([date,vol])=>{
+      if(!bestVolume || vol > bestVolume.volume) bestVolume = {date, volume:vol};
+    });
+
+    div.innerHTML = `
+      <div class="bp-name"><span class="star">★</span> ${sig.name} <span style="color:var(--text-dim); font-weight:400;">(${sig.bodyPart})</span></div>
+      <div class="two-col">
+        <div class="col">
+          <div class="k">최고 무게</div>
+          <div class="v">${bestWeight.weight}kg</div>
+          <div class="d">${bestWeight.date}</div>
+        </div>
+        <div class="col">
+          <div class="k">최고 볼륨</div>
+          <div class="v">${bestVolume.volume.toLocaleString()}kg</div>
+          <div class="d">${bestVolume.date}</div>
+        </div>
+      </div>`;
+    wrap.appendChild(div);
+  });
+}
+
+function populateSigBodyPartSelect(){
+  const sel = document.getElementById("newSigBodyPart");
+  if(sel.options.length) return;
+  BODY_PARTS.forEach(bp=>{
+    const opt = document.createElement("option");
+    opt.value = bp; opt.textContent = bp;
+    sel.appendChild(opt);
+  });
+}
+
+async function addSignatureExercise(){
+  const name = document.getElementById("newSigName").value.trim();
+  const bodyPart = document.getElementById("newSigBodyPart").value;
+  if(!name){ alert("종목 이름을 입력해줘"); return; }
+  if(signatureExercises.some(s=>s.name.trim().toLowerCase()===name.toLowerCase())){
+    alert("이미 등록된 대표 종목이야"); return;
+  }
+  signatureExercises.push({name, bodyPart});
+  exercisesByBodyPart[bodyPart] = exercisesByBodyPart[bodyPart] || [];
+  if(!exercisesByBodyPart[bodyPart].includes(name)) exercisesByBodyPart[bodyPart].push(name);
+
+  await persistSignatureExercises();
+  await persistExercises();
+
+  document.getElementById("newSigName").value = "";
+  renderSignatureHallOfFame();
+  if(currentBodyPart === bodyPart){ renderExerciseCardRow(); renderExerciseDatalist(); }
+  showToast(`${name} 대표 종목으로 추가 완료`);
+}
+
 /* ---------- 명예의 전당 ---------- */
 function renderHallOfFame(){
+  populateSigBodyPartSelect();
+  renderSignatureHallOfFame();
   const hof = computeHallOfFame(entries);
   if(!hof){
     document.getElementById("hofOverallVolume").textContent = "-";
@@ -630,6 +798,7 @@ async function init(){
   await loadAll();
   renderBodyPartChips();
   renderExerciseDatalist();
+  renderExerciseCardRow();
   renderTodaySession();
   renderCurrentSetList();
 }
