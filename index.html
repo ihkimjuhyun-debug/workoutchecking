@@ -1,150 +1,639 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elite PR Tracker v11.0 (Masterpiece Edition)</title>
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PR 아카이브</title>
+<style>
+  :root{
+    --bg: #17181b;
+    --panel: #202124;
+    --panel-2: #2a2b2f;
+    --line: #34353a;
+    --text: #ece9e3;
+    --text-dim: #98968f;
+    --accent: #cf9a4c;      /* 브라스 - 기록/명예의 전당 */
+    --accent-soft: #3a3327;
+    --heavy: #b9553a;       /* 최고중량 강조 */
+    --good: #7fa88f;        /* 성공/저장 */
+    --danger: #a24c46;
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    min-height:100vh; padding-bottom:40px;
+  }
+  header{
+    padding:22px 18px 14px; border-bottom:1px solid var(--line);
+  }
+  header h1{
+    margin:0; font-size:22px; font-weight:800; letter-spacing:-0.02em;
+  }
+  header .sub{ color:var(--text-dim); font-size:13px; margin-top:4px; }
+
+  nav.tabs{
+    display:flex; border-bottom:1px solid var(--line); background:var(--bg);
+    position:sticky; top:0; z-index:10;
+  }
+  nav.tabs button{
+    flex:1; padding:13px 8px; background:none; border:none; color:var(--text-dim);
+    font-size:14px; font-weight:600; cursor:pointer; border-bottom:2px solid transparent;
+  }
+  nav.tabs button.active{ color:var(--text); border-bottom-color:var(--accent); }
+
+  main{ max-width:640px; margin:0 auto; padding:16px; }
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:16px; margin-bottom:14px;
+  }
+  .card h2{ margin:0 0 12px; font-size:15px; font-weight:700; color:var(--text); }
+  .label{ font-size:12px; color:var(--text-dim); margin-bottom:6px; display:block; }
+
+  .chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .chip{
+    padding:8px 14px; border-radius:20px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--text); font-size:13px; cursor:pointer;
+  }
+  .chip.selected{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700; }
+  .chip.add{ border-style:dashed; color:var(--text-dim); }
+
+  input[type=text], input[type=number], select{
+    width:100%; padding:11px 12px; border-radius:8px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--text); font-size:15px;
+  }
+  input:focus, select:focus{ outline:1px solid var(--accent); }
+
+  .row{ display:flex; gap:10px; }
+  .row > *{ flex:1; }
+
+  .weight-chips{ display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+  .weight-chips button{
+    padding:6px 11px; border-radius:6px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--text); font-size:13px; cursor:pointer;
+  }
+  .weight-chips button:hover{ border-color:var(--accent); }
+
+  .plate-row{ display:flex; gap:6px; margin:8px 0; align-items:center; }
+  .plate-row button{
+    width:38px; height:34px; border-radius:6px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--text); font-size:13px; cursor:pointer; font-weight:600;
+  }
+  .plate-row .plate-plus{ color:var(--good); }
+  .plate-row .plate-minus{ color:var(--danger); }
+
+  button.primary{
+    width:100%; padding:12px; border:none; border-radius:8px; background:var(--accent);
+    color:#1a1a1a; font-size:14px; font-weight:800; cursor:pointer; margin-top:4px;
+  }
+  button.secondary{
+    width:100%; padding:11px; border:1px solid var(--line); border-radius:8px; background:transparent;
+    color:var(--text); font-size:14px; font-weight:600; cursor:pointer; margin-top:8px;
+  }
+  button.ghost-remove{
+    background:none; border:none; color:var(--text-dim); font-size:16px; cursor:pointer; padding:0 4px;
+  }
+
+  .set-list{ margin:10px 0; display:flex; flex-direction:column; gap:6px; }
+  .set-item{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--panel-2); padding:8px 12px; border-radius:6px; font-size:14px;
+  }
+  .set-item b{ color:var(--accent); }
+
+  .stat-row{ display:flex; gap:10px; margin-top:10px; }
+  .stat-box{ flex:1; background:var(--panel-2); border-radius:8px; padding:10px; text-align:center; }
+  .stat-box .num{ font-size:19px; font-weight:800; }
+  .stat-box .num.gold{ color:var(--accent); }
+  .stat-box .lbl{ font-size:11px; color:var(--text-dim); margin-top:2px; }
+
+  .session-entry{
+    border-bottom:1px solid var(--line); padding:10px 0; display:flex; justify-content:space-between; align-items:center;
+  }
+  .session-entry:last-child{ border-bottom:none; }
+  .session-entry .name{ font-weight:700; font-size:14px; }
+  .session-entry .meta{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .session-entry .vol{ font-weight:700; color:var(--accent); font-size:14px; white-space:nowrap; }
+
+  .empty{ color:var(--text-dim); font-size:13px; text-align:center; padding:20px 0; }
+
+  .hof-hero{
+    display:flex; gap:10px; margin-bottom:14px;
+  }
+  .hof-hero .card{ flex:1; margin-bottom:0; text-align:center; }
+  .hof-hero .tag{ font-size:11px; color:var(--text-dim); margin-bottom:6px; }
+  .hof-hero .big{ font-size:26px; font-weight:800; color:var(--accent); }
+  .hof-hero .detail{ font-size:12px; color:var(--text-dim); margin-top:6px; }
+
+  .bp-record{
+    border-bottom:1px solid var(--line); padding:12px 0;
+  }
+  .bp-record:last-child{ border-bottom:none; }
+  .bp-record .bp-name{ font-weight:700; font-size:14px; margin-bottom:8px; }
+  .bp-record .two-col{ display:flex; gap:10px; }
+  .bp-record .col{ flex:1; background:var(--panel-2); border-radius:8px; padding:9px 10px; }
+  .bp-record .col .k{ font-size:11px; color:var(--text-dim); }
+  .bp-record .col .v{ font-size:15px; font-weight:800; margin-top:3px; }
+  .bp-record .col .d{ font-size:11px; color:var(--text-dim); margin-top:2px; }
+
+  .history-day{ border-bottom:1px solid var(--line); }
+  .history-day summary{
+    padding:12px 0; cursor:pointer; display:flex; justify-content:space-between; align-items:center; list-style:none;
+  }
+  .history-day summary::-webkit-details-marker{ display:none; }
+  .history-day .date{ font-weight:700; font-size:14px; }
+  .history-day .parts{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .history-day .total{ font-weight:700; color:var(--accent); font-size:14px; }
+  .history-day .body{ padding:0 0 14px; }
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent);
+    padding:12px 18px; border-radius:10px; font-size:13px; font-weight:700;
+    max-width:90%; text-align:center; z-index:50; box-shadow:0 4px 20px rgba(0,0,0,.4);
+  }
+</style>
 </head>
 <body>
 
-  <div class="app-container">
-    <header>
-      <h1 onclick="showView('home-view')">🔥 PR Tracker</h1>
-      <nav>
-        <button onclick="showView('search-view')">검색</button>
-        <button onclick="showView('hof-view')">명예의전당</button>
-        <button onclick="showView('goal-view')" style="color: var(--primary);">AI 목표</button>
-        <button onclick="showView('settings-view')">⚙️ 설정</button>
-      </nav>
-    </header>
+<header>
+  <h1>PR 아카이브</h1>
+  <div class="sub" id="todayLabel"></div>
+</header>
 
-    <!-- 1. 메인 홈 -->
-    <div id="home-view" class="view-section active">
-      <h2>오늘의 운동 부위 선택</h2>
-      <div class="category-grid mt-20" id="category-selection">
-        <div class="cat-btn" data-cat="어깨">어깨</div><div class="cat-btn" data-cat="등">등</div>
-        <div class="cat-btn" data-cat="가슴">가슴</div><div class="cat-btn" data-cat="하체">하체</div>
-        <div class="cat-btn" data-cat="팔">팔</div><div class="cat-btn" data-cat="복근">복근</div>
-        <div class="cat-btn" data-cat="케틀벨">케틀벨</div><div class="cat-btn" data-cat="유산소">유산소</div>
-      </div>
-      <button class="primary-btn mt-20" onclick="startWorkout()">운동 일지 기록 시작하기</button>
-    </div>
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="log">기록하기</button>
+  <button class="tab-btn" data-tab="hof">명예의 전당</button>
+  <button class="tab-btn" data-tab="history">히스토리</button>
+</nav>
 
-    <!-- 2. 운동 기록 입력 (낱말 카드 부활) -->
-    <div id="record-view" class="view-section">
-      <h2 id="current-categories-title" class="mb-10">운동 기록</h2>
-      
-      <!-- 🔥 낱말 카드 컨테이너 (가로 스크롤) -->
-      <div style="font-size: 0.85rem; color: #aaa; margin-bottom: 5px;">빠른 종목 추가 (낱말 카드 터치)</div>
-      <div id="quick-select-container" class="quick-card-container mb-20" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px;"></div>
-      
-      <div id="exercise-inputs-container"></div>
-      
-      <button class="secondary-btn mb-20" style="border: 1px dashed var(--primary); background: transparent; color: var(--primary);" onclick="addExerciseInput()">➕ 수동으로 다른 종목 추가</button>
-      <div class="action-buttons">
-        <button class="primary-btn" onclick="saveRecord('now')">지금 시간으로 일지 저장</button>
-        <button class="secondary-btn mt-10" onclick="togglePastDateInput()">과거/특정 시간으로 기록</button>
-      </div>
-      <div id="past-date-container" style="display: none; margin-top: 15px;">
-        <input type="datetime-local" id="input-past-date" step="1">
-        <button class="primary-btn mt-10" onclick="saveRecord('past')">선택한 시간으로 저장</button>
-      </div>
-    </div>
+<main>
 
-    <!-- 3. 명예의 전당 -->
-    <div id="hof-view" class="view-section">
-      <h2 class="mb-10">🏆 명예의 전당</h2>
-      <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 15px;">기록 카드를 터치하면 상세 세션 내용(무게/횟수)을 볼 수 있습니다.</p>
-      <div class="hof-tabs mb-20">
-        <button class="hof-tab active" onclick="switchHofTab('volume')">🔴 역대 볼륨 순위</button>
-        <button class="hof-tab" onclick="switchHofTab('weight')" style="display: none;">🟡 최고 무게 PR</button>
-      </div>
-      <div id="hof-volume-list" class="list-container"></div>
-    </div>
+  <!-- 기록하기 -->
+  <section class="panel active" id="panel-log">
 
-    <!-- 4. 통합 검색 및 종목 관리 -->
-    <div id="search-view" class="view-section">
-      <h2 class="mb-20">🔍 통합 검색</h2>
-      <div class="category-grid mb-20" id="filter-categories">
-        <div class="cat-btn" data-filter="어깨">어깨</div><div class="cat-btn" data-filter="등">등</div>
-        <div class="cat-btn" data-filter="가슴">가슴</div><div class="cat-btn" data-filter="하체">하체</div>
-        <div class="cat-btn" data-filter="팔">팔</div><div class="cat-btn" data-filter="복근">복근</div>
-        <div class="cat-btn" data-filter="케틀벨">케틀벨</div><div class="cat-btn" data-filter="유산소">유산소</div>
-      </div>
-      <input type="text" id="search-input" placeholder="종목 검색..." class="mb-20" onkeyup="searchExercises()">
-      <div id="exercise-list" class="list-container"></div>
-      
-      <button class="secondary-btn mt-20" onclick="toggleCustomExerciseForm()">➕ 맞춤 종목/AI 썸네일 추가</button>
-      <div id="custom-exercise-form" class="record-card" style="display: none; margin-top:15px; border-color: var(--primary);">
-        <div class="input-group"><label>종목명</label><input type="text" id="custom-ex-name" placeholder="예: 불가리안 백 스핀"></div>
-        <div class="input-row">
-          <div class="input-group"><label>카테고리</label><select id="custom-ex-cat" class="custom-select"><option value="케틀벨">케틀벨</option><option value="하체">하체</option><option value="가슴">가슴</option><option value="등">등</option><option value="어깨">어깨</option></select></div>
-          <div class="input-group"><label>타겟 부위</label><input type="text" id="custom-ex-target"></div>
+    <div class="card">
+      <h2>부위 선택</h2>
+      <div class="chip-row" id="bodyPartRow"></div>
+
+      <h2>종목</h2>
+      <input type="text" id="exerciseInput" list="exerciseList" placeholder="종목 이름 입력 또는 선택 (예: 벤치프레스)">
+      <datalist id="exerciseList"></datalist>
+
+      <div style="margin-top:14px;">
+        <span class="label">무게 (kg)</span>
+        <div class="row">
+          <input type="number" id="weightInput" step="0.5" placeholder="0">
+          <input type="number" id="repsInput" step="1" placeholder="횟수" value="10">
         </div>
-        <div id="ai-img-preview" style="display:none; text-align:center; margin:15px 0;"><img id="generated-img" style="width:60px; height:60px; border-radius:10px; border:2px solid var(--primary); object-fit: cover;"></div>
-        <button class="secondary-btn mt-10" id="btn-gen-img" onclick="generateDalleIcon()">🎨 AI 썸네일 생성</button>
-        <button class="primary-btn mt-10" onclick="addCustomExercise()">✅ 종목 최종 저장</button>
+        <div class="weight-chips" id="recentWeightChips"></div>
+        <div class="plate-row">
+          <button class="plate-minus" onclick="adjustWeight(-5)">-5</button>
+          <button class="plate-minus" onclick="adjustWeight(-2.5)">-2.5</button>
+          <button class="plate-minus" onclick="adjustWeight(-1.25)">-1.25</button>
+          <button class="plate-plus" onclick="adjustWeight(1.25)">+1.25</button>
+          <button class="plate-plus" onclick="adjustWeight(2.5)">+2.5</button>
+          <button class="plate-plus" onclick="adjustWeight(5)">+5</button>
+        </div>
+        <button class="secondary" onclick="addSet()">+ 세트 추가</button>
+      </div>
+
+      <div class="set-list" id="currentSetList"></div>
+
+      <button class="primary" onclick="saveExerciseEntry()">이 종목 저장</button>
+    </div>
+
+    <div class="card">
+      <h2>오늘 기록 (<span id="todayCount">0</span>개 종목)</h2>
+      <div id="todaySessionList"></div>
+      <div class="stat-row">
+        <div class="stat-box"><div class="num" id="todayVolume">0</div><div class="lbl">오늘 총 볼륨 (kg)</div></div>
+        <div class="stat-box"><div class="num" id="todayMaxWeight">0</div><div class="lbl">오늘 최고 중량 (kg)</div></div>
+      </div>
+      <button class="primary" style="background:var(--good); margin-top:14px;" onclick="finishWorkout()">운동 종료 · 기록 확정</button>
+    </div>
+
+  </section>
+
+  <!-- 명예의 전당 -->
+  <section class="panel" id="panel-hof">
+    <div class="hof-hero">
+      <div class="card">
+        <div class="tag">전체 볼륨 1위</div>
+        <div class="big" id="hofOverallVolume">-</div>
+        <div class="detail" id="hofOverallVolumeDetail">기록 없음</div>
+      </div>
+      <div class="card">
+        <div class="tag">전체 무게 1위</div>
+        <div class="big" id="hofOverallWeight">-</div>
+        <div class="detail" id="hofOverallWeightDetail">기록 없음</div>
       </div>
     </div>
 
-    <!-- 5. 히스토리 조회 뷰 -->
-    <div id="history-view" class="view-section">
-      <button class="secondary-btn mb-20" onclick="showView('search-view')" style="width: auto; padding: 8px 15px;">⬅ 뒤로 가기</button>
-      <h2 id="history-title" class="mb-10">기록 비교</h2>
-      <div id="history-list" class="list-container mb-20"></div>
+    <div class="card">
+      <h2>부위별 기록</h2>
+      <div id="hofBodyPartList"></div>
     </div>
+  </section>
 
-    <!-- 6. 🔥 세션 상세 뷰 (터치 시 전개) -->
-    <div id="session-detail-view" class="view-section">
-      <button class="secondary-btn mb-20" onclick="showView('hof-view')" style="width: auto; padding: 8px 15px;">⬅ 뒤로 가기</button>
-      <div style="background: #2a2a2a; padding: 15px; border-radius: 10px; border-left: 4px solid var(--primary); margin-bottom: 20px;">
-        <h2 id="session-detail-title" style="margin-bottom: 5px; font-size: 1.3rem;">세션 상세</h2>
-        <div id="session-detail-info" style="color: var(--primary); font-weight: bold; font-size: 0.95rem;"></div>
-      </div>
-      <div id="session-workout-list" class="list-container mb-20"></div>
+  <!-- 히스토리 -->
+  <section class="panel" id="panel-history">
+    <div class="card">
+      <h2>전체 기록</h2>
+      <div id="historyList"></div>
     </div>
+  </section>
 
-    <!-- 7. 다중 AI 목표 지원 뷰 -->
-    <div id="goal-view" class="view-section">
-      <div id="active-goals-header" style="display:flex; justify-content:space-between; align-items:center;" class="mb-20">
-        <h2 style="margin:0;">🔥 진행 중인 목표들</h2>
-        <button class="primary-btn" style="width:auto; padding:8px 15px; font-size:0.9rem;" onclick="toggleGoalSetup()">➕ 새 목표 추가</button>
-      </div>
+</main>
 
-      <div id="goal-setup-area" style="display: none; margin-bottom: 30px;">
-        <div class="record-card">
-          <h3 class="mb-20" style="color:var(--primary);">🎯 새로운 AI 루틴 설계</h3>
-          <div class="input-group"><label>목표 종목명</label><input type="text" id="goal-name" placeholder="예: OHP, 데드리프트"></div>
-          <div class="input-row mb-10"><input type="number" id="goal-target-weight" placeholder="목표 무게(kg)"><input type="number" id="goal-target-reps" placeholder="목표 횟수(회)"></div>
-          <div class="input-row mb-10"><input type="number" id="goal-current-weight" placeholder="현재 무게(kg)"><input type="number" id="goal-current-reps" placeholder="현재 횟수(회)"></div>
-          <div class="input-group"><label>훈련 기간</label><select id="goal-duration" class="custom-select"><option value="1">1개월</option><option value="3" selected>3개월</option><option value="6">6개월</option></select></div>
-          <div style="display:flex; gap:10px;">
-            <button class="secondary-btn mt-20" onclick="toggleGoalSetup()" style="flex:1;">취소</button>
-            <button class="primary-btn mt-20" id="btn-generate-routine" onclick="generateAIRoutines()" style="flex:2;">✨ 루틴 생성하기</button>
+<script>
+/* ---------- 상태 ---------- */
+const BODY_PARTS = ["가슴","등","어깨","팔","하체","복근"];
+let entries = [];               // {id,date,bodyPart,exerciseName,sets:[{weight,reps}],volume,maxWeight}
+let exercisesByBodyPart = {};   // bodyPart -> [exerciseName,...]
+let recentWeights = {};         // exerciseName -> [weight,...] (최근순, 최대 8개)
+
+let currentBodyPart = BODY_PARTS[0];
+let currentSets = [];
+
+const todayStr = () => {
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+};
+
+/* ---------- 저장소 ---------- */
+async function loadAll(){
+  try{ const r = await window.storage.get("prarchive:entries"); entries = r ? JSON.parse(r.value) : []; }catch(e){ entries = []; }
+  try{ const r = await window.storage.get("prarchive:exercises"); exercisesByBodyPart = r ? JSON.parse(r.value) : {}; }catch(e){ exercisesByBodyPart = {}; }
+  try{ const r = await window.storage.get("prarchive:recentWeights"); recentWeights = r ? JSON.parse(r.value) : {}; }catch(e){ recentWeights = {}; }
+}
+async function persistEntries(){ try{ await window.storage.set("prarchive:entries", JSON.stringify(entries)); }catch(e){} }
+async function persistExercises(){ try{ await window.storage.set("prarchive:exercises", JSON.stringify(exercisesByBodyPart)); }catch(e){} }
+async function persistRecentWeights(){ try{ await window.storage.set("prarchive:recentWeights", JSON.stringify(recentWeights)); }catch(e){} }
+
+/* ---------- 탭 ---------- */
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-"+btn.dataset.tab).classList.add("active");
+    if(btn.dataset.tab==="hof") renderHallOfFame();
+    if(btn.dataset.tab==="history") renderHistory();
+  });
+});
+
+/* ---------- 부위 선택 ---------- */
+function renderBodyPartChips(){
+  const row = document.getElementById("bodyPartRow");
+  row.innerHTML = "";
+  BODY_PARTS.forEach(bp=>{
+    const c = document.createElement("div");
+    c.className = "chip" + (bp===currentBodyPart ? " selected" : "");
+    c.textContent = bp;
+    c.onclick = ()=>{ currentBodyPart = bp; renderBodyPartChips(); renderExerciseDatalist(); };
+    row.appendChild(c);
+  });
+}
+
+function renderExerciseDatalist(){
+  const list = document.getElementById("exerciseList");
+  list.innerHTML = "";
+  (exercisesByBodyPart[currentBodyPart]||[]).forEach(name=>{
+    const opt = document.createElement("option");
+    opt.value = name;
+    list.appendChild(opt);
+  });
+}
+
+/* ---------- 무게 입력 ---------- */
+document.getElementById("exerciseInput").addEventListener("input", ()=>{
+  const name = document.getElementById("exerciseInput").value.trim();
+  renderRecentWeightChips(name);
+  // 최근 사용 무게 자동 채움
+  if(recentWeights[name] && recentWeights[name].length){
+    document.getElementById("weightInput").value = recentWeights[name][0];
+  }
+});
+
+function renderRecentWeightChips(name){
+  const wrap = document.getElementById("recentWeightChips");
+  wrap.innerHTML = "";
+  const weights = recentWeights[name] || [];
+  weights.slice(0,6).forEach(w=>{
+    const b = document.createElement("button");
+    b.textContent = w + "kg";
+    b.onclick = ()=>{ document.getElementById("weightInput").value = w; };
+    wrap.appendChild(b);
+  });
+}
+
+function adjustWeight(delta){
+  const input = document.getElementById("weightInput");
+  const cur = parseFloat(input.value) || 0;
+  input.value = Math.max(0, cur + delta);
+}
+
+/* ---------- 세트 추가/저장 ---------- */
+function addSet(){
+  const weight = parseFloat(document.getElementById("weightInput").value);
+  const reps = parseInt(document.getElementById("repsInput").value);
+  if(!weight || !reps){ alert("무게와 횟수를 입력해줘"); return; }
+  currentSets.push({weight, reps});
+  renderCurrentSetList();
+}
+
+function renderCurrentSetList(){
+  const wrap = document.getElementById("currentSetList");
+  wrap.innerHTML = "";
+  currentSets.forEach((s,i)=>{
+    const row = document.createElement("div");
+    row.className = "set-item";
+    row.innerHTML = `<span>세트 ${i+1} · <b>${s.weight}kg</b> x ${s.reps}회</span>`;
+    const rm = document.createElement("button");
+    rm.className = "ghost-remove"; rm.textContent = "✕";
+    rm.onclick = ()=>{ currentSets.splice(i,1); renderCurrentSetList(); };
+    row.appendChild(rm);
+    wrap.appendChild(row);
+  });
+}
+
+async function saveExerciseEntry(){
+  const name = document.getElementById("exerciseInput").value.trim();
+  if(!name){ alert("종목을 입력해줘"); return; }
+  if(currentSets.length===0){ alert("세트를 최소 1개 추가해줘"); return; }
+
+  const volume = currentSets.reduce((s,x)=>s+x.weight*x.reps, 0);
+  const maxWeight = Math.max(...currentSets.map(x=>x.weight));
+
+  entries.push({
+    id: Date.now()+"-"+Math.random().toString(36).slice(2,7),
+    date: todayStr(),
+    bodyPart: currentBodyPart,
+    exerciseName: name,
+    sets: currentSets.slice(),
+    volume, maxWeight
+  });
+
+  // 종목 목록 업데이트
+  exercisesByBodyPart[currentBodyPart] = exercisesByBodyPart[currentBodyPart] || [];
+  if(!exercisesByBodyPart[currentBodyPart].includes(name)) exercisesByBodyPart[currentBodyPart].push(name);
+
+  // 최근 무게 업데이트 (최근순, 중복 제거, 최대 8개)
+  const usedWeights = [...new Set(currentSets.map(x=>x.weight))];
+  let arr = recentWeights[name] || [];
+  usedWeights.reverse().forEach(w=>{
+    arr = [w, ...arr.filter(x=>x!==w)];
+  });
+  recentWeights[name] = arr.slice(0,8);
+
+  await persistEntries(); await persistExercises(); await persistRecentWeights();
+
+  currentSets = [];
+  document.getElementById("exerciseInput").value = "";
+  document.getElementById("weightInput").value = "";
+  document.getElementById("repsInput").value = "10";
+  document.getElementById("recentWeightChips").innerHTML = "";
+  renderCurrentSetList();
+  renderExerciseDatalist();
+  renderTodaySession();
+  showToast(`${name} 저장 완료 · 볼륨 ${volume.toLocaleString()}kg`);
+}
+
+/* ---------- 오늘 세션 ---------- */
+function renderTodaySession(){
+  const list = entries.filter(e=>e.date===todayStr());
+  const wrap = document.getElementById("todaySessionList");
+  wrap.innerHTML = "";
+  document.getElementById("todayCount").textContent = list.length;
+
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty">오늘 저장한 종목이 없어</div>`;
+  } else {
+    list.forEach(e=>{
+      const row = document.createElement("div");
+      row.className = "session-entry";
+      row.innerHTML = `
+        <div>
+          <div class="name">${e.exerciseName}</div>
+          <div class="meta">${e.bodyPart} · 세트 ${e.sets.length}개 · 최고 ${e.maxWeight}kg</div>
+        </div>
+        <div class="vol">${e.volume.toLocaleString()}kg</div>`;
+      wrap.appendChild(row);
+    });
+  }
+
+  const totalVolume = list.reduce((s,e)=>s+e.volume,0);
+  const maxWeight = list.length ? Math.max(...list.map(e=>e.maxWeight)) : 0;
+  document.getElementById("todayVolume").textContent = totalVolume.toLocaleString();
+  document.getElementById("todayMaxWeight").textContent = maxWeight;
+}
+
+/* ---------- 운동 종료 & 신기록 체크 ---------- */
+function computeHallOfFame(list){
+  if(list.length===0) return null;
+
+  // 날짜별 총 볼륨/부위
+  const byDate = {};
+  list.forEach(e=>{
+    byDate[e.date] = byDate[e.date] || {volume:0, bodyParts:new Set()};
+    byDate[e.date].volume += e.volume;
+    byDate[e.date].bodyParts.add(e.bodyPart);
+  });
+  let overallVolumeRecord = null;
+  Object.entries(byDate).forEach(([date,v])=>{
+    if(!overallVolumeRecord || v.volume>overallVolumeRecord.volume){
+      overallVolumeRecord = {date, volume:v.volume, bodyParts:[...v.bodyParts]};
+    }
+  });
+
+  // 전체 무게 1위 (단일 세트 기준)
+  let overallWeightRecord = null;
+  list.forEach(e=>{
+    e.sets.forEach(s=>{
+      if(!overallWeightRecord || s.weight>overallWeightRecord.weight){
+        overallWeightRecord = {weight:s.weight, date:e.date, exerciseName:e.exerciseName, bodyPart:e.bodyPart};
+      }
+    });
+  });
+
+  // 부위별: 최고 무게 / 최고 볼륨(날짜 단위)
+  const perBodyPart = {};
+  list.forEach(e=>{
+    perBodyPart[e.bodyPart] = perBodyPart[e.bodyPart] || {maxWeight:null, dateVolume:{}};
+    e.sets.forEach(s=>{
+      if(!perBodyPart[e.bodyPart].maxWeight || s.weight>perBodyPart[e.bodyPart].maxWeight.weight){
+        perBodyPart[e.bodyPart].maxWeight = {weight:s.weight, date:e.date, exerciseName:e.exerciseName};
+      }
+    });
+    perBodyPart[e.bodyPart].dateVolume[e.date] = (perBodyPart[e.bodyPart].dateVolume[e.date]||0) + e.volume;
+  });
+  Object.keys(perBodyPart).forEach(bp=>{
+    const dv = perBodyPart[bp].dateVolume;
+    let best = null;
+    Object.entries(dv).forEach(([date,vol])=>{
+      if(!best || vol>best.volume) best = {date, volume:vol};
+    });
+    perBodyPart[bp].maxVolume = best;
+  });
+
+  return {overallVolumeRecord, overallWeightRecord, perBodyPart};
+}
+
+async function finishWorkout(){
+  const todayEntries = entries.filter(e=>e.date===todayStr());
+  if(todayEntries.length===0){ alert("오늘 저장된 종목이 없어"); return; }
+
+  const prevHOF = computeHallOfFame(entries.filter(e=>e.date!==todayStr()));
+  const nowHOF = computeHallOfFame(entries);
+
+  let msgs = [];
+  const totalVolume = todayEntries.reduce((s,e)=>s+e.volume,0);
+  const maxWeight = Math.max(...todayEntries.flatMap(e=>e.sets.map(s=>s.weight)));
+
+  if(!prevHOF || totalVolume > prevHOF.overallVolumeRecord.volume){
+    msgs.push(`🏆 전체 볼륨 신기록! ${totalVolume.toLocaleString()}kg`);
+  }
+  if(!prevHOF || maxWeight > prevHOF.overallWeightRecord.weight){
+    msgs.push(`🏋️ 전체 최고 중량 신기록! ${maxWeight}kg`);
+  }
+  // 부위별 신기록 체크
+  const partsToday = [...new Set(todayEntries.map(e=>e.bodyPart))];
+  partsToday.forEach(bp=>{
+    const bpEntriesToday = todayEntries.filter(e=>e.bodyPart===bp);
+    const bpVolToday = bpEntriesToday.reduce((s,e)=>s+e.volume,0);
+    const bpMaxToday = Math.max(...bpEntriesToday.flatMap(e=>e.sets.map(s=>s.weight)));
+    const prevBp = prevHOF && prevHOF.perBodyPart[bp];
+    if(!prevBp || !prevBp.maxVolume || bpVolToday > prevBp.maxVolume.volume){
+      msgs.push(`📈 ${bp} 볼륨 신기록! ${bpVolToday.toLocaleString()}kg`);
+    }
+    if(!prevBp || !prevBp.maxWeight || bpMaxToday > prevBp.maxWeight.weight){
+      msgs.push(`💪 ${bp} 최고 중량 신기록! ${bpMaxToday}kg`);
+    }
+  });
+
+  if(msgs.length===0){
+    showToast(`운동 완료 · 오늘 볼륨 ${totalVolume.toLocaleString()}kg`);
+  } else {
+    showToast(msgs.join("  ·  "), 5000);
+  }
+  renderHallOfFame();
+}
+
+/* ---------- 명예의 전당 ---------- */
+function renderHallOfFame(){
+  const hof = computeHallOfFame(entries);
+  if(!hof){
+    document.getElementById("hofOverallVolume").textContent = "-";
+    document.getElementById("hofOverallVolumeDetail").textContent = "기록 없음";
+    document.getElementById("hofOverallWeight").textContent = "-";
+    document.getElementById("hofOverallWeightDetail").textContent = "기록 없음";
+    document.getElementById("hofBodyPartList").innerHTML = `<div class="empty">아직 기록이 없어</div>`;
+    return;
+  }
+  document.getElementById("hofOverallVolume").textContent = hof.overallVolumeRecord.volume.toLocaleString()+"kg";
+  document.getElementById("hofOverallVolumeDetail").textContent =
+    `${hof.overallVolumeRecord.date} · ${hof.overallVolumeRecord.bodyParts.join(", ")}`;
+
+  document.getElementById("hofOverallWeight").textContent = hof.overallWeightRecord.weight+"kg";
+  document.getElementById("hofOverallWeightDetail").textContent =
+    `${hof.overallWeightRecord.date} · ${hof.overallWeightRecord.exerciseName} (${hof.overallWeightRecord.bodyPart})`;
+
+  const wrap = document.getElementById("hofBodyPartList");
+  wrap.innerHTML = "";
+  BODY_PARTS.forEach(bp=>{
+    const rec = hof.perBodyPart[bp];
+    const div = document.createElement("div");
+    div.className = "bp-record";
+    if(!rec){
+      div.innerHTML = `<div class="bp-name">${bp}</div><div class="empty">기록 없음</div>`;
+    } else {
+      div.innerHTML = `
+        <div class="bp-name">${bp}</div>
+        <div class="two-col">
+          <div class="col">
+            <div class="k">최고 무게</div>
+            <div class="v">${rec.maxWeight ? rec.maxWeight.weight+"kg" : "-"}</div>
+            <div class="d">${rec.maxWeight ? rec.maxWeight.date+" · "+rec.maxWeight.exerciseName : ""}</div>
           </div>
+          <div class="col">
+            <div class="k">최고 볼륨</div>
+            <div class="v">${rec.maxVolume ? rec.maxVolume.volume.toLocaleString()+"kg" : "-"}</div>
+            <div class="d">${rec.maxVolume ? rec.maxVolume.date : ""}</div>
+          </div>
+        </div>`;
+    }
+    wrap.appendChild(div);
+  });
+}
+
+/* ---------- 히스토리 ---------- */
+function renderHistory(){
+  const byDate = {};
+  entries.forEach(e=>{
+    byDate[e.date] = byDate[e.date] || [];
+    byDate[e.date].push(e);
+  });
+  const dates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
+  const wrap = document.getElementById("historyList");
+  wrap.innerHTML = "";
+  if(dates.length===0){ wrap.innerHTML = `<div class="empty">기록이 없어</div>`; return; }
+
+  dates.forEach(date=>{
+    const list = byDate[date];
+    const totalVol = list.reduce((s,e)=>s+e.volume,0);
+    const parts = [...new Set(list.map(e=>e.bodyPart))].join(", ");
+    const det = document.createElement("details");
+    det.className = "history-day";
+    det.innerHTML = `
+      <summary>
+        <div>
+          <div class="date">${date}</div>
+          <div class="parts">${parts}</div>
         </div>
-        
-        <div id="ai-loading" style="display: none; text-align: center; padding: 30px;"><div class="loader"></div><p class="mt-10" id="ai-loading-text">데이터 분석 및 훈련 스케줄 생성 중...</p></div>
-        <div id="ai-routines-area" style="display: none;"><div id="ai-routines-list" class="list-container mt-20"></div><button class="primary-btn mt-20" onclick="startSelectedRoutine()" style="background:#4CAF50;">🚀 선택한 루틴 저장 및 시작</button></div>
-      </div>
+        <div class="total">${totalVol.toLocaleString()}kg</div>
+      </summary>
+      <div class="body">
+        ${list.map(e=>`
+          <div class="session-entry">
+            <div>
+              <div class="name">${e.exerciseName}</div>
+              <div class="meta">${e.bodyPart} · ${e.sets.map(s=>s.weight+"kg x "+s.reps).join(", ")}</div>
+            </div>
+            <div class="vol">${e.volume.toLocaleString()}kg</div>
+          </div>
+        `).join("")}
+      </div>`;
+    wrap.appendChild(det);
+  });
+}
 
-      <div id="active-goals-list" class="list-container"></div>
-    </div>
+/* ---------- 토스트 ---------- */
+let toastTimer = null;
+function showToast(msg, duration=3000){
+  let t = document.querySelector(".toast");
+  if(t) t.remove();
+  t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.remove(), duration);
+}
 
-    <!-- 8. 설정 -->
-    <div id="settings-view" class="view-section">
-      <h2>⚙️ API 설정</h2>
-      <div class="record-card mt-20">
-        <label>OpenAI API Key</label>
-        <input type="password" id="openai-key" placeholder="sk-...">
-        <button class="primary-btn mt-10" onclick="saveApiKey()">키 저장</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="toast-msg" class="toast"></div>
-  <script src="app.js"></script>
+/* ---------- 초기화 ---------- */
+async function init(){
+  document.getElementById("todayLabel").textContent = todayStr() + " 기록 중";
+  await loadAll();
+  renderBodyPartChips();
+  renderExerciseDatalist();
+  renderTodaySession();
+  renderCurrentSetList();
+}
+init();
+</script>
 </body>
 </html>
